@@ -1,0 +1,28 @@
+This is a pythonic wrapper around the libdc1394 Version 2 for FireWire Cameras.
+(http://damien.douxchamps.net/ieee1394/libdc1394/) 
+
+This work was primarily developped by Holger Rapp; I use this at work to do
+freaky things (http://www.youtube.com/watch?v=5O4FrRujlII) and I consider it
+usable though maybe not bug free. 
+
+Included is also a UI (using wxPython and PyOpenGL, you will need these
+obviously) called LiveCameraDisplay which takes an opened cameras in init and
+displays it's data live. 
+
+Usage
+=====
+
+There is an example script included. Basically there are two camera modes. The
+first one acquires a number of pictures continuously (e.g. it is guaranteed
+that no frames are missing when continously calling Camera.shot(). The other
+mode is freerunning, the current image can always be accessed (thread safe) via
+Camera.current_image. This mode is useful for visualisation or if you are not
+interested in exact timings.  
+
+Synchronized Cams
+=================
+
+Point Grey Research offers for their camera an auto synchronization when they
+are attached to the same IEEE 1394 Bus. The SynchronizedCams Wrapper class
+takes two cameras that need to be opened with the same framerate and mode.
+SynchronizedCams.shot will then deliver two pictures taken at the same time. 
