@@ -49,10 +49,25 @@ class TestInstantiation(LibBase):
 
 # From now on, we assume that we can get a camera instance
 class TestCamera(CamBase):
+    @need_cam
     def test_acquisition(self):
         self.c.start()
         i = self.c.shot()
         eq_(i.shape[0], self.c.mode[1])
         eq_(i.shape[1], self.c.mode[0])
         self.c.stop()
+
+    @need_cam
+    def test_reset(self):
+        self.c.start()
+        self.c.reset_bus()
+        
+        eq_(self.c.running, False)
+        
+        self.c.start()
+        self.c.shot()
+        self.c.stop()
+
+
+
 

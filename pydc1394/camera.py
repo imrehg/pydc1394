@@ -392,6 +392,12 @@ class Camera(object):
         self._running = False
         self._running_lock.release()
 
+    def reset_bus( self ):
+        if self.running:
+            self.stop()
+
+        self._dll.dc1394_reset_bus( self._cam )
+
     def shot( self ):
         """
         If the camera is running, this will acquire one frame from it and

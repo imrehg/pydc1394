@@ -643,6 +643,8 @@ def _errcheck( rtype, func, arg ):
 _dll.dc1394_new.restype = c_void_p
 _dll.dc1394_free.restype = None
 _dll.dc1394_free.argtypes = [ c_void_p ]
+_dll.dc1394_reset_bus.errcheck = _errcheck
+_dll.dc1394_reset_bus.argtypes = [ POINTER(dc1394camera_t) ]
 
 ###################
 # OPENING/CLOSING #
