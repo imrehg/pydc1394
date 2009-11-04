@@ -10,12 +10,12 @@ by Holger Rapp.
 import sys
 import optparse
 
-import wx
 
 from pydc1394 import DC1394Library, Camera
 from pydc1394.ui.wx import LiveCameraDisplay
 from pydc1394.cmdline import add_common_options, handle_common_options
 
+import wx
 def main():
     p = optparse.OptionParser(usage="Usage: %prog [ options ]\n"
       "This program displays a live image of your camera")
