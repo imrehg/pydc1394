@@ -774,8 +774,11 @@ class SynchronizedCams(object):
         return i1,i2
 
 
-    def _sync(self):
-
+    def sync(self):
+        """
+        Try to sync the two cameras to each other. This will
+        only work if both cameras synchronize on the bus time
+        """
         ldiff = 100000000
         while 1:
             t1 = self._cam0.shot().timestamp
