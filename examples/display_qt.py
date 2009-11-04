@@ -25,14 +25,7 @@ def main():
 
     if cam:
         app = QApplication(args)
-
         w1 = LiveCameraWin(cam); w1.show(); w1.raise_()
-        # w2 = LiveCameraWin(cam0); w2.show(); w2.raise_()
-        # w3 = LiveCameraWin(cam0); w3.show(); w3.raise_()
-        # w4 = LiveCameraWin(cam0); w4.show(); w4.raise_()
-        # w5 = LiveCameraWin(cam0); w5.show(); w5.raise_()
-        # w6 = LiveCameraWin(cam0); w6.show(); w6.raise_()
-
         sys.exit(app.exec_())
 
 main()

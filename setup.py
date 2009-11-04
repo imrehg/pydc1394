@@ -11,6 +11,6 @@ setup(
     author_email = "sirver@users.sf.net",
     url="https://launchpad.net/pydc1394",
 
-    packages = [ "pydc1394", "pydc1394.ui.qt", "pydc1394.ui.wx" ],
+    packages = [ "pydc1394", "pydc1394.ui", "pydc1394.ui.qt", "pydc1394.ui.wx" ],
 )
 
