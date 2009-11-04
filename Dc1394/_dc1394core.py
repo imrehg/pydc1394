@@ -1,7 +1,14 @@
 #!/usr/bin/env python
 # encoding: utf-8
+#
+# File: _dc1394core.py
+#
+# Created by Holger Rapp on 2008-07-26.
+# Copyright (c) 2008 HolgerRapp@gmx.net. All rights reserved.
 
 """This file wraps the dc1394 library functions"""
+
+# __all__ = [ "_dll", "dc1394camera_t", "dc1394camera_list_t", "dc1394camera_id_t" ]
 
 from ctypes import *
 import sys
@@ -9,7 +16,18 @@ import sys
 if sys.platform.startswith("linux"):
     _dll = cdll.LoadLibrary("libdc1394.so.22")
 else:
-    _dll = cdll.LoadLibrary("libdc1394.22.dylib")
+    def _try_loadcdll(dll, path):
+        try:
+            return cdll.LoadLibrary(path + "libdc1394.22.dylib")
+        except OSError, e:
+            return None
+    for p in ("", "/usr/local/lib/", "/opt/local/lib/", "/sw/lib/"):
+        _dll = _try_loadcdll("libdc1394.22.dylib", p)
+        if _dll is not None:
+            break
+    if _dll is None:
+        raise OSError("Dc1394 library was not found!")
+
 
 ###########################################################################
 #                                  ENUMS                                  #
@@ -55,46 +73,46 @@ DC1394_BASLER_NO_MORE_SFF_CHUNKS   = -37
 DC1394_BASLER_CORRUPTED_SFF_CHUNK  = -38
 DC1394_BASLER_UNKNOWN_SFF_CHUNK    = -39
 dc1394error_t_vals = {
-        0: 'DC1394_SUCCESS',
-       -1: 'DC1394_FAILURE',
-       -2: 'DC1394_NOT_A_CAMERA',
-       -3: 'DC1394_FUNCTION_NOT_SUPPORTED',
-       -4: 'DC1394_CAMERA_NOT_INITIALIZED',
-       -5: 'DC1394_MEMORY_ALLOCATION_FAILURE',
-       -6: 'DC1394_TAGGED_REGISTER_NOT_FOUND',
-       -7: 'DC1394_NO_ISO_CHANNEL',
-       -8: 'DC1394_NO_BANDWIDTH',
-       -9: 'DC1394_IOCTL_FAILURE',
-      -10: 'DC1394_CAPTURE_IS_NOT_SET',
-      -11: 'DC1394_CAPTURE_IS_RUNNING',
-      -12: 'DC1394_RAW1394_FAILURE',
-      -13: 'DC1394_FORMAT7_ERROR_FLAG_1',
-      -14: 'DC1394_FORMAT7_ERROR_FLAG_2',
-      -15: 'DC1394_INVALID_ARGUMENT_VALUE',
-      -16: 'DC1394_REQ_VALUE_OUTSIDE_RANGE',
-      -17: 'DC1394_INVALID_FEATURE',
-      -18: 'DC1394_INVALID_VIDEO_FORMAT',
-      -19: 'DC1394_INVALID_VIDEO_MODE',
-      -20: 'DC1394_INVALID_FRAMERATE',
-      -21: 'DC1394_INVALID_TRIGGER_MODE',
-      -22: 'DC1394_INVALID_TRIGGER_SOURCE',
-      -23: 'DC1394_INVALID_ISO_SPEED',
-      -24: 'DC1394_INVALID_IIDC_VERSION',
-      -25: 'DC1394_INVALID_COLOR_CODING',
-      -26: 'DC1394_INVALID_COLOR_FILTER',
-      -27: 'DC1394_INVALID_CAPTURE_POLICY',
-      -28: 'DC1394_INVALID_ERROR_CODE',
-      -29: 'DC1394_INVALID_BAYER_METHOD',
-      -30: 'DC1394_INVALID_VIDEO1394_DEVICE',
-      -31: 'DC1394_INVALID_OPERATION_MODE',
-      -32: 'DC1394_INVALID_TRIGGER_POLARITY',
-      -33: 'DC1394_INVALID_FEATURE_MODE',
-      -34: 'DC1394_INVALID_LOG_TYPE',
-      -35: 'DC1394_INVALID_BYTE_ORDER',
-      -36: 'DC1394_INVALID_STEREO_METHOD',
-      -37: 'DC1394_BASLER_NO_MORE_SFF_CHUNKS',
-      -38: 'DC1394_BASLER_CORRUPTED_SFF_CHUNK',
-      -39: 'DC1394_BASLER_UNKNOWN_SFF_CHUNK',
+        0: 'DC1394_SUCCESS', 
+       -1: 'DC1394_FAILURE', 
+       -2: 'DC1394_NOT_A_CAMERA', 
+       -3: 'DC1394_FUNCTION_NOT_SUPPORTED', 
+       -4: 'DC1394_CAMERA_NOT_INITIALIZED', 
+       -5: 'DC1394_MEMORY_ALLOCATION_FAILURE', 
+       -6: 'DC1394_TAGGED_REGISTER_NOT_FOUND', 
+       -7: 'DC1394_NO_ISO_CHANNEL', 
+       -8: 'DC1394_NO_BANDWIDTH', 
+       -9: 'DC1394_IOCTL_FAILURE', 
+      -10: 'DC1394_CAPTURE_IS_NOT_SET', 
+      -11: 'DC1394_CAPTURE_IS_RUNNING', 
+      -12: 'DC1394_RAW1394_FAILURE', 
+      -13: 'DC1394_FORMAT7_ERROR_FLAG_1', 
+      -14: 'DC1394_FORMAT7_ERROR_FLAG_2', 
+      -15: 'DC1394_INVALID_ARGUMENT_VALUE', 
+      -16: 'DC1394_REQ_VALUE_OUTSIDE_RANGE', 
+      -17: 'DC1394_INVALID_FEATURE', 
+      -18: 'DC1394_INVALID_VIDEO_FORMAT', 
+      -19: 'DC1394_INVALID_VIDEO_MODE', 
+      -20: 'DC1394_INVALID_FRAMERATE', 
+      -21: 'DC1394_INVALID_TRIGGER_MODE', 
+      -22: 'DC1394_INVALID_TRIGGER_SOURCE', 
+      -23: 'DC1394_INVALID_ISO_SPEED', 
+      -24: 'DC1394_INVALID_IIDC_VERSION', 
+      -25: 'DC1394_INVALID_COLOR_CODING', 
+      -26: 'DC1394_INVALID_COLOR_FILTER', 
+      -27: 'DC1394_INVALID_CAPTURE_POLICY', 
+      -28: 'DC1394_INVALID_ERROR_CODE', 
+      -29: 'DC1394_INVALID_BAYER_METHOD', 
+      -30: 'DC1394_INVALID_VIDEO1394_DEVICE', 
+      -31: 'DC1394_INVALID_OPERATION_MODE', 
+      -32: 'DC1394_INVALID_TRIGGER_POLARITY', 
+      -33: 'DC1394_INVALID_FEATURE_MODE', 
+      -34: 'DC1394_INVALID_LOG_TYPE', 
+      -35: 'DC1394_INVALID_BYTE_ORDER', 
+      -36: 'DC1394_INVALID_STEREO_METHOD', 
+      -37: 'DC1394_BASLER_NO_MORE_SFF_CHUNKS', 
+      -38: 'DC1394_BASLER_CORRUPTED_SFF_CHUNK', 
+      -39: 'DC1394_BASLER_UNKNOWN_SFF_CHUNK', 
 }
 dc1394error_t = c_int
 DC1394_ERROR_MIN = DC1394_BASLER_UNKNOWN_SFF_CHUNK
@@ -370,14 +388,14 @@ DC1394_FRAMERATE_60    = 37
 DC1394_FRAMERATE_120   = 38
 DC1394_FRAMERATE_240   = 39
 dc1394framerate_t_vals = {
-       32: 1.875,
-       33: 3.75,
-       34: 7.5,
-       35: 15.,
-       36: 30,
-       37: 60.,
-       38: 120.,
-       39: 240.,
+       32: 1.875, 
+       33: 3.75, 
+       34: 7.5, 
+       35: 15., 
+       36: 30, 
+       37: 60., 
+       38: 120., 
+       39: 240., 
 }
 dc1394framerate_t = c_int
 DC1394_FRAMERATE_MIN = DC1394_FRAMERATE_1_875
@@ -398,12 +416,12 @@ DC1394_ISO_SPEED_800  = 3
 DC1394_ISO_SPEED_1600 = 4
 DC1394_ISO_SPEED_3200 = 5
 dc1394speed_t_vals = {
-        0: 100,
-        1: 200,
-        2: 400,
-        3: 800,
-        4: 1600,
-        5: 3200,
+        0: 100, 
+        1: 200, 
+        2: 400, 
+        3: 800, 
+        4: 1600, 
+        5: 3200, 
 }
 dc1394speed_t = c_int
 DC1394_ISO_SPEED_MIN =  DC1394_ISO_SPEED_100
@@ -567,13 +585,13 @@ dc1394featureset_t._fields_ = [
 DC1394_CAPTURE_FLAGS_CHANNEL_ALLOC   = 0x00000001
 DC1394_CAPTURE_FLAGS_BANDWIDTH_ALLOC = 0x00000002
 DC1394_CAPTURE_FLAGS_DEFAULT         = 0x00000004
-DC1394_CAPTURE_FLAGS_AUTO_ISO        = 0x00000008
+DC1394_CAPTURE_FLAGS_AUTO_ISO        = 0x00000008 
 
 
 class dc1394video_frame_t(Structure):
      pass
 dc1394video_frame_t._fields_ = [
-    ("image", c_void_p),
+    ("image", c_void_p), 
     ("size", (c_uint32)*2),
     ("position", (c_uint32)*2),
     ("color_coding", dc1394color_coding_t),
@@ -618,6 +636,13 @@ def _errcheck( rtype, func, arg ):
 ###########################################################################
 #                                FUNCTIONS                                #
 ###########################################################################
+
+##################
+# INITIALIZATION #
+##################
+_dll.dc1394_new.restype = c_void_p
+_dll.dc1394_free.restype = None
+_dll.dc1394_free.argtypes = [ c_void_p ]
 
 ###################
 # OPENING/CLOSING #

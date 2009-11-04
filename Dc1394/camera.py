@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 # encoding: utf-8
+#
+# File: camera.py
+#
+# Created by Holger Rapp on 2008-07-26.
+# Copyright (c) 2008 HolgerRapp@gmx.net. All rights reserved.
 
 from _dc1394core import *
 from ctypes import *
@@ -15,9 +20,9 @@ __all__ = [ "DC1394Library", "Camera", "SynchronizedCams" ]
 
 class DC1394Library(object):
     """
-    This wraps the dc1394 library object which is a nuisance to have around. This
-    is bad design on behalve of DC1394. Oh well...
-    This object must stay valid untill all cameras are closed
+    This wraps the dc1394 library object which is a nuisance to have
+    around. This is bad design on behalve of DC1394. Oh well...  This
+    object must stay valid untill all cameras are closed
     """
     def __init__( self ):
         self._dll = _dll  # we cache the dll, so it gets not deleted before we cleanup
@@ -26,7 +31,10 @@ class DC1394Library(object):
         self.close()
 
     def close( self ):
-        self._dll.dc1394_free( self._h )
+        if self._h is not None:
+            self._dll.dc1394_free( self._h )
+        self._h = None
+
     @property
     def h(self):
         "The handle to the library context."
@@ -57,8 +65,8 @@ class DC1394Library(object):
 
 class Image(ndarray):
     """
-    This class is a image returned by the camera. It is basically a numpy
-    array with some additional informations (like timestamps)
+    This class is a image returned by the camera. It is basically a
+    numpy array with some additional informations (like timestamps)
     """
     @property
     def position(self):
@@ -88,30 +96,40 @@ class Image(ndarray):
 class _CamAcquisitonThread(Thread):
     def __init__(self,cam, condition ):
         """
-        This class is created and launched whenever
-        a camera is start()ed. It continously acquires
-        the pictures from the camera and sets a condition to inform
-        other threads of the arrival of a new picture
+        This class is created and launched whenever a camera is start()ed.
+        It continously acquires the pictures from the camera and sets a
+        condition to inform other threads of the arrival of a new picture
         """
         Thread.__init__(self)
 
         self._cam = cam
-        self._should_abort = Event()
+        self._should_abort = False
 
         self._last_frame = None
         self._condition = condition
 
+        self._abortLock = Lock()
+
         self.start()
 
     def abort(self):
-        self._should_abort.set()
+        self._abortLock.acquire()
+        self._should_abort = True
+        self._abortLock.release()
 
     def run(self):
         """
         Core function which contains the acquisition loop
         """
 
-        while not self._should_abort.is_set():
+        while 1:
+            self._abortLock.acquire()
+            sa = self._should_abort
+            self._abortLock.release()
+
+            if sa:
+                break
+
             if self._last_frame:
                 self._cam._dll.dc1394_capture_enqueue( self._cam._cam, self._last_frame )
 
@@ -234,30 +252,35 @@ class CameraProperty(object):
 
 
 class Camera(object):
-    def __init__( self, lib, guid, mode = (640, 480, "Y8"), framerate = 7.5, isospeed = 400, **feat):
+    def __init__( self, lib, guid, mode = None, framerate = None, isospeed = 400, **feat):
         """
         This class represents a IEEE1394 Camera on the BUS. It currently
-        supports all features of the cameras except whitebalacing.
+        supports all features of the cameras except white balancing.
 
         You can pass all features the camera supports as additional arguments
         to this classes constructor.  For example: shutter = 7.4, gain = 8
 
-        The cameras pictures can be accessed in two ways. Either way, use start() to beginn the capture.
-        If you are always interested in the latest picture use the new_image Condition, wait for it, then use
-        cam.current_image for your processing. This mode is called interactive because it is used in
-        live displays.
-        An alternative way is to use shot() which gurantees to deliver all pictures the camera acquires in
-        the correct order. Note though that you have to process these pictures with a certain speed, otherwise
-        the caching queue will overrun. This mode is called serial. Note that you can theoretically also use the first
-        acquisition mode here, but this seldom makes sense since you need a processing of the pictures anyway.
+        The cameras pictures can be accessed in two ways. Either way, use
+        start() to beginn the capture.  If you are always interested in the
+        latest picture use the new_image Condition, wait for it, then use
+        cam.current_image for your processing. This mode is called interactive
+        because it is used in live displays.  An alternative way is to use
+        shot() which gurantees to deliver all pictures the camera acquires
+        in the correct order. Note though that you have to process these
+        pictures with a certain speed, otherwise the caching queue will
+        overrun. This mode is called serial. Note that you can theoretically
+        also use the first acquisition mode here, but this seldom makes
+        sense since you need a processing of the pictures anyway.
 
         lib       - the DC1394Library object is needed to open a camera
-        guid      - GUID of this camera, can be a hexstring or the integer value
-        mode      - acquisition mode
-        framerate - wanted framerate
-        isospeed  - wanted isospeed
-        shutter   - wanted shutter value
-        gain      - wanted gain value
+        guid      - GUID of this camera, can be a hexstring or the integer
+                    value
+        mode      - acquisition mode, e.g. (640, 480, "Y8"). If you pass None,
+                    the first supported mode will be selected.
+        framerate - wanted framerate, if you pass None, the slowest supported
+                    will be selected.
+        isospeed  - wanted isospeed, you might want to use 800 if your bus
+                    supports it
         """
         self._lib = lib
         if isinstance(guid,basestring):
@@ -274,12 +297,12 @@ class Camera(object):
         self._current_img = None
         self._worker = None
 
-        self._wanted_frate, = [ k for k,v in dc1394framerate_t_vals.items() if v == framerate ]
 
         self.open()
 
         # Gather some informations about this camera
-        self._all_features = self.__get_all_features()  # Will also set the properties accordingly
+        # Will also set the properties accordingly
+        self._all_features = self.__get_all_features()
         self._all_modes = self.__get_supported_modes()
 
         # Set all features to manual (if possible)
@@ -288,11 +311,17 @@ class Camera(object):
                 self.__getattribute__(f).mode = 'manual'
 
         # Set acquisition mode and framerate
-        self.mode = mode
-        self.fps = framerate
+        self.mode = mode if mode is not None else self._all_modes[0]
+        self.fps = framerate = framerate or \
+                self.get_framerates_for_mode(self.mode)[0]
+
+        # Convert framerate
+        self._wanted_frate, = [ k for k,v in dc1394framerate_t_vals.items()
+                   if v == framerate ]
 
         # Set isospeed
-        self._wanted_speed, = [ k for k,v in dc1394speed_t_vals.items() if v == isospeed ]
+        self._wanted_speed, = [ k for k,v in dc1394speed_t_vals.items()
+                   if v == isospeed ]
 
         # If we are not using a FORMAT_7 format, set the framerate feature to auto
         # again. This control is not available on all cameras, if it is missing,
@@ -307,6 +336,8 @@ class Camera(object):
 
         # Set other parameters
         for n,v in feat.items():
+            if v is None:
+                continue
             self.__getattribute__(n).val = v
 
     def start( self, bufsize = 4, interactive = False ):
@@ -385,7 +416,8 @@ class Camera(object):
     def open( self ):
         """Open the camera"""
         self._cam = _dll.dc1394_camera_new( self._lib.h, self._guid )
-
+        if not self._cam:
+            raise RuntimeError, "Couldn't access camera!"
 
     def close(self):
         """Close the camera. Stops it, if it was running"""
@@ -660,14 +692,18 @@ class Camera(object):
         "Return all supported modes for this camera"
         return self._all_modes
 
-    @property
-    def framerates( self ):
-        """Contains all framerates supported for the current Camera.mode"""
+    def get_framerates_for_mode(self, mode = None):
+        """
+        Returns all framerates supported for the given mode; if mode is
+        None the current mode will be used.
+        """
         if not self._cam:
             raise RuntimeError, "The camera is not opened!"
 
+        use_modes = mode or self._wanted_mode
+
         fpss = dc1394framerates_t()
-        _dll.dc1394_video_get_supported_framerates( self._cam, self._wanted_mode,
+        _dll.dc1394_video_get_supported_framerates(self._cam, self._wanted_mode,
                         byref(fpss))
         return tuple( dc1394framerate_t_vals[fpss.framerates[i]]
              for i in range( fpss.num ) )
@@ -748,5 +784,4 @@ class SynchronizedCams(object):
             else:
                 self._cam1.shot()
             ldiff = diff
-
 
