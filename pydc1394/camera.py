@@ -749,7 +749,7 @@ class SynchronizedCams(object):
     def start(self, buffers = 4):
         self._cam0.start(buffers); self._cam1.start(buffers)
 
-        self._sync()
+        self.sync()
 
     def stop(self):
         self._cam0.stop(); self._cam1.stop()
