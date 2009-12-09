@@ -666,6 +666,12 @@ _dll.dc1394_camera_get_broadcast.argtypes = [ c_void_p, POINTER(dc1394bool_t) ]
 _dll.dc1394_camera_get_broadcast.errcheck = _errcheck
 _dll.dc1394_camera_set_broadcast.argtypes = [ c_void_p, dc1394bool_t ]
 _dll.dc1394_camera_set_broadcast.errcheck = _errcheck
+
+_dll.dc1394_feature_whitebalance_get_value.argtypes = [ c_void_p, POINTER(c_uint32), POINTER(c_uint32) ]
+_dll.dc1394_feature_whitebalance_get_value.errcheck = _errcheck
+_dll.dc1394_feature_whitebalance_set_value.argtypes = [ c_void_p, c_uint32, c_uint32 ]
+_dll.dc1394_feature_whitebalance_set_value.errcheck = _errcheck
+
 _dll.dc1394_feature_get_value.argtypes = [ c_void_p, c_int, POINTER(c_uint32) ]
 _dll.dc1394_feature_get_value.errcheck = _errcheck
 _dll.dc1394_feature_set_value.argtypes = [ c_void_p, c_int, c_uint32 ]

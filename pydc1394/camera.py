@@ -172,27 +172,36 @@ class CameraProperty(object):
     def val():
         doc = "The current value of this property"
         def fget(self):
-            if self._absolute_capable:
-                val = c_float()
-                self._dll.dc1394_feature_get_absolute_value( self._cam._cam, self._id, byref(val))
+            if self._name == "white_balance":
+                blue = c_uint32()
+                red = c_uint32()
+                self._dll.dc1394_feature_whitebalance_get_value( self._cam._cam, byref(blue), byref(red))
+                return (blue.value, red.value)
             else:
-                val = c_uint32()
-                self._dll.dc1394_feature_get_value( self._cam._cam, self._id, byref(val))
-            # We want shutter in ms
-            if self._name == "shutter":
-                val.value *= 1000.
-            return val.value
+                if self._absolute_capable:
+                    val = c_float()
+                    self._dll.dc1394_feature_get_absolute_value( self._cam._cam, self._id, byref(val))
+                else:
+                    val = c_uint32()
+                    self._dll.dc1394_feature_get_value( self._cam._cam, self._id, byref(val))
+                # We want shutter in ms
+                if self._name == "shutter":
+                    val.value = int(val.value * 1000.)
+                return val.value
         def fset(self, value):
             # We want shutter in ms
-            if self._name == "shutter":
-                value /= 1000.
-
-            if self._absolute_capable:
-                val = float(value)
-                self._dll.dc1394_feature_set_absolute_value( self._cam._cam, self._id, val)
+            if self._name == "white_balance":
+                blue, red = value
+                self._dll.dc1394_feature_whitebalance_set_value( self._cam._cam, blue, red)
             else:
-                val = int(value)
-                self._dll.dc1394_feature_set_value( self._cam._cam, self._id, val)
+                if self._name == "shutter":
+                    value /= 1000.
+                if self._absolute_capable:
+                    val = float(value)
+                    self._dll.dc1394_feature_set_absolute_value( self._cam._cam, self._id, val)
+                else:
+                    val = int(value)
+                    self._dll.dc1394_feature_set_value( self._cam._cam, self._id, val)
         return locals()
     val = property(**val())
 
@@ -642,7 +651,7 @@ class Camera(object):
                 self._dtype = '>u1'
             elif mode[-1] == 'Y16':
                 self._dtype = '>u2'
-            elif mode[-1] == 'RGB':
+            elif mode[-1] == 'RGB8':
                 self._dtype = '>u1'
                 self._shape.append( 3 )
         return locals()
