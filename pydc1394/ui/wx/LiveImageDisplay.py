@@ -9,7 +9,6 @@ from OpenGL.GLU import *
 
 import time
 
-# from ..Utils import saveload as Sl
 # Numpy array is our picture
 from numpy import empty
 
