@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 from time import sleep
 from pydc1394 import DC1394Library, Camera
