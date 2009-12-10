@@ -29,20 +29,23 @@ for feat in cam0.features:
     print cmd
     exec(cmd)
 
+#choose color mode
 cam0.mode = (640, 480, 'RGB8')
+
 if len(sys.argv) > 1:
     cam0.start(interactive=False)
+    sleep(0.5) #let hardware start !
     matrix = cam0.shot()
     cam0.stop()
 else:
     cam0.start(interactive=True)
-    sleep(0.5)
+    sleep(0.5) #let hardware start !
     matrix = cam0.current_image
     cam0.stop()
+
 print "Shape:", matrix.shape
-#Image.fromstring("RGB", (480, 640), im, "raw").save("t.bmp")
-#Image.fromstring("RGB", (640, 480), im, "raw").save("t.bmp")
 Image.fromstring("RGB", (640, 480), matrix, "raw").save("t.bmp")
+
 import os
 os.system("eog t.bmp")
 
