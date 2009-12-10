@@ -18,7 +18,10 @@ from PyQt4.QtGui import *
 from PyQt4.QtOpenGL import *
 import numpy as np
 
-from Utils import saveload as Sl
+try:
+    from Utils import saveload as Sl
+except ImportError:
+    pass
 
 __all__ = [ "LiveCameraWin", "ImageDisplay", ]
 
