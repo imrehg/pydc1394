@@ -173,6 +173,7 @@ class CameraProperty(object):
         doc = "The current value of this property"
         def fget(self):
             if self._name == "white_balance":
+                #white has its own call since it returns 2 values
                 blue = c_uint32()
                 red = c_uint32()
                 self._dll.dc1394_feature_whitebalance_get_value( self._cam._cam, byref(blue), byref(red))
@@ -189,11 +190,12 @@ class CameraProperty(object):
                     val.value = int(val.value * 1000.)
                 return val.value
         def fset(self, value):
-            # We want shutter in ms
             if self._name == "white_balance":
+                #white has its own call since it returns 2 values
                 blue, red = value
                 self._dll.dc1394_feature_whitebalance_set_value( self._cam._cam, blue, red)
             else:
+                # We want shutter in ms
                 if self._name == "shutter":
                     value /= 1000.
                 if self._absolute_capable:
@@ -263,8 +265,8 @@ class CameraProperty(object):
 class Camera(object):
     def __init__( self, lib, guid, mode = None, framerate = None, isospeed = 400, **feat):
         """
-        This class represents a IEEE1394 Camera on the BUS. It currently
-        supports all features of the cameras except white balancing.
+        This class represents a IEEE1394 Camera on the BUS. It 
+        supports all features of the cameras.
 
         You can pass all features the camera supports as additional arguments
         to this classes constructor.  For example: shutter = 7.4, gain = 8
