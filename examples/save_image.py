@@ -49,5 +49,5 @@ print "Shape:", matrix.shape
 Image.fromstring("RGB", (640, 480), matrix, "raw").save("t.bmp")
 
 import os
-os.system("eog t.bmp")
+os.system("eog t.bmp&")
 

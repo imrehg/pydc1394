@@ -649,13 +649,24 @@ class Camera(object):
             self._wanted_mode, = [ k for k,v in dc1394video_mode_t_vals.items() if v == mode ]
 
             self._shape = [ mode[1], mode[0] ]
+            self._dtype = '>u1'
             if mode[-1] == 'Y8':
                 self._dtype = '>u1'
-            elif mode[-1] == 'Y16':
-                self._dtype = '>u2'
+            elif mode[-1] == "YUV411":
+                self._dtype = '>u1'
+                self._shape = (self._shape[0] * self._shape[1] * 3 / 2 )
+            elif mode[-1] == "YUV422":
+                self._dtype = '>u1'
+                self._shape = (self._shape[0] * self._shape[1] * 3  * 4 / 6 , )
+            elif mode[-1] == "YUV444":
+                self._dtype = '>u1'
+                self._shape = (self._shape[0] * self._shape[1] * 3  )
             elif mode[-1] == 'RGB8':
                 self._dtype = '>u1'
+                #self._shape = (self._shape[0] * self._shape[1] * 3  )
                 self._shape.append( 3 )
+            else:
+                raise NotImplementedError("Unknown image format" + mode[-1])
         return locals()
     mode = property(**mode())
 
