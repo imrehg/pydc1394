@@ -25,7 +25,8 @@ class DC1394Library(object):
     object must stay valid untill all cameras are closed
     """
     def __init__( self ):
-        self._dll = _dll  # we cache the dll, so it gets not deleted before we cleanup
+        # we cache the dll, so it gets not deleted before we cleanup
+        self._dll = _dll
         self._h = _dll.dc1394_new()
     def __del__(self):
         self.close()
@@ -56,7 +57,7 @@ class DC1394Library(object):
             ids = l.contents.ids[i]
             cams.append(
                 { "unit": ids.unit,
-                  "guid": hex(ids.guid)[2:].strip("L")  # For what do we need this L anyway?!?!
+                  "guid": hex(ids.guid)[2:].strip("L")
                 }
             )
         _dll.dc1394_camera_free_list(l)
@@ -86,7 +87,10 @@ class Image(ndarray):
         return self._timestamp
     @property
     def frames_behind(self):
-        "the number of frames in the ring buffer that are yet to be accessed by the user"
+        """
+        the number of frames in the ring buffer that are yet to be accessed
+        by the user
+        """
         return self._frames_behind
     @property
     def id(self):
@@ -131,10 +135,14 @@ class _CamAcquisitonThread(Thread):
                 break
 
             if self._last_frame:
-                self._cam._dll.dc1394_capture_enqueue( self._cam._cam, self._last_frame )
+                self._cam._dll.dc1394_capture_enqueue(
+                    self._cam._cam, self._last_frame
+                )
 
             frame = POINTER(dc1394video_frame_t)()
-            self._cam._dll.dc1394_capture_dequeue(self._cam._cam, DC1394_CAPTURE_POLICY_WAIT, byref(frame));
+            self._cam._dll.dc1394_capture_dequeue(self._cam._cam,
+                  DC1394_CAPTURE_POLICY_WAIT, byref(frame)
+            );
 
             Dtype = c_char*frame.contents.image_bytes
             buf = Dtype.from_address(frame.contents.image)
@@ -143,20 +151,29 @@ class _CamAcquisitonThread(Thread):
             self._last_frame = frame
 
             self._condition.acquire()
-            img = fromstring(buf, dtype=self._cam._dtype).reshape(self._cam._shape).view(Image)
-            img._position,img._packet_size, img._packets_per_frame, img._timestamp, img._frames_behind, \
-                    img._id = frame.contents.position, frame.contents.packet_size, frame.contents.packets_per_frame, \
-                              frame.contents.timestamp, frame.contents.frames_behind,frame.contents.id
+            img = fromstring(buf, dtype=self._cam._dtype).reshape(
+                self._cam._shape).view(Image)
+
+            img._position,img._packet_size, img._packets_per_frame, \
+                img._timestamp, img._frames_behind, img._id = \
+                frame.contents.position, frame.contents.packet_size, \
+                frame.contents.packets_per_frame, frame.contents.timestamp, \
+                frame.contents.frames_behind,frame.contents.id
+
             self._cam._current_img = img
             if self._cam._queue:
-                self._cam._queue.put_nowait(img) # This will throw an exception if you are to slow while processing
+                # This will throw an exception if you are to slow while
+                # processing
+                self._cam._queue.put_nowait(img)
 
             self._condition.notifyAll()
             self._condition.release()
 
         # Return the last frame
         if self._last_frame:
-            self._cam._dll.dc1394_capture_enqueue( self._cam._cam, self._last_frame )
+            self._cam._dll.dc1394_capture_enqueue(
+                self._cam._cam, self._last_frame
+            )
         self._last_frame = None
 
 
@@ -172,39 +189,66 @@ class CameraProperty(object):
     def val():
         doc = "The current value of this property"
         def fget(self):
-            if self._absolute_capable:
-                val = c_float()
-                self._dll.dc1394_feature_get_absolute_value( self._cam._cam, self._id, byref(val))
+            if self._name == "white_balance":
+                #white has its own call since it returns 2 values
+                blue = c_uint32()
+                red = c_uint32()
+                self._dll.dc1394_feature_whitebalance_get_value(
+                    self._cam._cam, byref(blue), byref(red)
+                )
+                return (blue.value, red.value)
             else:
-                val = c_uint32()
-                self._dll.dc1394_feature_get_value( self._cam._cam, self._id, byref(val))
-            # We want shutter in ms
-            if self._name == "shutter":
-                val.value *= 1000.
-            return val.value
+                if self._absolute_capable:
+                    val = c_float()
+                    self._dll.dc1394_feature_get_absolute_value(
+                        self._cam._cam, self._id, byref(val)
+                    )
+                else:
+                    val = c_uint32()
+                    self._dll.dc1394_feature_get_value(
+                        self._cam._cam, self._id, byref(val)
+                    )
+                # We want shutter in ms
+                if self._name == "shutter":
+                    val.value = int(val.value * 1000.)
+                return val.value
         def fset(self, value):
-            # We want shutter in ms
-            if self._name == "shutter":
-                value /= 1000.
-
-            if self._absolute_capable:
-                val = float(value)
-                self._dll.dc1394_feature_set_absolute_value( self._cam._cam, self._id, val)
+            if self._name == "white_balance":
+                #white has its own call since it returns 2 values
+                blue, red = value
+                self._dll.dc1394_feature_whitebalance_set_value(
+                    self._cam._cam, blue, red
+                )
             else:
-                val = int(value)
-                self._dll.dc1394_feature_set_value( self._cam._cam, self._id, val)
+                # We want shutter in ms
+                if self._name == "shutter":
+                    value /= 1000.
+                if self._absolute_capable:
+                    val = float(value)
+                    self._dll.dc1394_feature_set_absolute_value(
+                        self._cam._cam, self._id, val
+                    )
+                else:
+                    val = int(value)
+                    self._dll.dc1394_feature_set_value(
+                        self._cam._cam, self._id, val
+                    )
         return locals()
     val = property(**val())
 
     @property
     def range(self):
-        "The RO foo property."
+        "Min/Max values of this property"
         if self._absolute_capable:
             min, max = c_float(), c_float()
-            self._dll.dc1394_feature_get_absolute_boundaries( self._cam._cam, self._id, byref(min),byref(max))
+            self._dll.dc1394_feature_get_absolute_boundaries(
+                self._cam._cam, self._id, byref(min),byref(max)
+            )
         else:
             min, max = c_uint32(), c_uint32()
-            self._dll.dc1394_feature_get_boundaries( self._cam._cam, self._id, byref(min),byref(max))
+            self._dll.dc1394_feature_get_boundaries(
+                self._cam._cam, self._id, byref(min),byref(max)
+            )
 
         # We want shutter in ms
         if self._name == "shutter":
@@ -216,14 +260,18 @@ class CameraProperty(object):
     def can_be_disabled(self):
         "Can this property be disabled"
         k = dc1394bool_t()
-        self._dll.dc1394_feature_is_switchable(self._cam._cam, self._id, byref(k))
+        self._dll.dc1394_feature_is_switchable(
+            self._cam._cam, self._id, byref(k)
+        )
         return bool(k.value)
 
     def on():
         doc = "Toggle this feature on and off"
         def fget(self):
             k = dc1394bool_t()
-            self._dll.dc1394_feature_get_power( self._cam._cam, self._id, byref(k))
+            self._dll.dc1394_feature_get_power(
+                self._cam._cam, self._id, byref(k)
+            )
             return bool(k.value)
         def fset(self, value):
             k = bool(value)
@@ -236,7 +284,8 @@ class CameraProperty(object):
         "The possible control modes for this feature (auto,manual,...)"
         modes = dc1394feature_modes_t()
         _dll.dc1394_feature_get_modes(self._cam._cam, self._id, byref(modes))
-        return [ dc1394feature_mode_t_vals[modes.modes[i]] for i in range(modes.num) ]
+        return [ dc1394feature_mode_t_vals[modes.modes[i]]
+                for i in range(modes.num) ]
 
     def mode():
         doc = "The current control mode this feature is running in"
@@ -245,17 +294,19 @@ class CameraProperty(object):
             _dll.dc1394_feature_get_mode(self._cam._cam, self._id, byref(mode))
             return dc1394feature_mode_t_vals[mode.value]
         def fset(self, value):
-            key, = [ k for k,v in dc1394feature_mode_t_vals.items() if v == value ]
+            key, = [ k for k,v in dc1394feature_mode_t_vals.items()
+                    if v == value ]
             _dll.dc1394_feature_set_mode(self._cam._cam, self._id,key )
         return locals()
     mode = property(**mode())
 
 
 class Camera(object):
-    def __init__( self, lib, guid, mode = None, framerate = None, isospeed = 400, **feat):
+    def __init__(self, lib, guid, mode = None,
+                 framerate = None, isospeed = 400, **feat):
         """
-        This class represents a IEEE1394 Camera on the BUS. It currently
-        supports all features of the cameras except white balancing.
+        This class represents a IEEE1394 Camera on the BUS. It
+        supports all features of the cameras.
 
         You can pass all features the camera supports as additional arguments
         to this classes constructor.  For example: shutter = 7.4, gain = 8
@@ -323,9 +374,9 @@ class Camera(object):
         self._wanted_speed, = [ k for k,v in dc1394speed_t_vals.items()
                    if v == isospeed ]
 
-        # If we are not using a FORMAT_7 format, set the framerate feature to auto
-        # again. This control is not available on all cameras, if it is missing,
-        # the framerate is only controllable by the current mode
+        # If we are not using a FORMAT_7 format, set the framerate feature to
+        # auto again. This control is not available on all cameras, if it is
+        # missing, the framerate is only controllable by the current mode
         try:
             self.framerate.mode = "auto"
         except AttributeError:
@@ -344,10 +395,12 @@ class Camera(object):
         """
         Start the camera in free running acquisition
 
-        bufsize - how many DMA buffers should be used? If this value is high, the
-                  lag between your currently processed picture and reality might
-                  be higher but your risk to miss a frame is also much lower.
-        interactive - If this is true, shot() is not supported and no queue overrun can occure
+        bufsize     - how many DMA buffers should be used? If this value is
+                      high, the lag between your currently processed picture
+                      and reality might be higher but your risk to miss a frame
+                      is also much lower.
+        interactive - If this is true, shot() is not supported and no queue
+                      overrun can occure
         """
         if self.running:
             return
@@ -359,7 +412,8 @@ class Camera(object):
         self._dll.dc1394_video_set_iso_speed( self._cam, self._wanted_speed )
         self._dll.dc1394_video_set_mode( self._cam, self._wanted_mode )
         self._dll.dc1394_video_set_framerate( self._cam, self._wanted_frate )
-        self._dll.dc1394_capture_setup( self._cam, bufsize, DC1394_CAPTURE_FLAGS_DEFAULT)
+        self._dll.dc1394_capture_setup( self._cam,
+                        bufsize, DC1394_CAPTURE_FLAGS_DEFAULT)
 
         # Start the acquisition
         self._dll.dc1394_video_set_transmission( self._cam, 1 )
@@ -434,26 +488,32 @@ class Camera(object):
             _dll.dc1394_camera_free( self._cam )
             self._cam = None
 
-    def program_format7_mode( self, slot, offset = (0,0), mode = (640,480,"Y8")):
+    def program_format7_mode(self, slot, offset = (0,0), mode = (640,480,"Y8")):
         """
-        Program a given Format 7 slot (0 = FORMAT7_0) with the given parameters.
-        The package size is always the maximum available. The framerate can
-        then only be controlled through the framerate property (if available).
-        This also implicitly sets the correct mode for format 7.
+        Program a given Format 7 slot (0 = FORMAT7_0) with the given
+        parameters.  The package size is always the maximum available. The
+        framerate can then only be controlled through the framerate property
+        (if available).  This also implicitly sets the correct mode for
+        format 7.
 
-        If you change the mode to a normal one and want your format 7 mode again, you
-        have to recall this function. The behaviour otherwise is undefined.
+        If you change the mode to a normal one and want your format 7 mode
+        again, you have to recall this function. The behaviour otherwise
+        is undefined.
 
         slot   - 0,1,2 FORMAT7 Slot to program
         offset - picture offset (for ROI)
-        mode   - Resolution and data depth is extracted. A valid mode would be
-                 (121,99,"RGB")
+        mode   - Resolution and data depth is extracted. A valid mode would
+                 be (121,99,"RGB")
         """
         if self.running:
-            raise RuntimeError, "Can't set Format7 mode while camera is running!"
+            raise RuntimeError(
+                "Can't set Format7 mode while camera is running!"
+        )
 
-        uslot, = [ k for k,v in dc1394video_mode_t_vals.items() if v == "FORMAT7_%i" % slot ]
-        cco, = [ k for k,v in dc1394color_coding_t_vals.items() if v == mode[-1] ]
+        uslot, = [ k for k,v in dc1394video_mode_t_vals.items()
+                  if v == "FORMAT7_%i" % slot ]
+        cco, = [ k for k,v in dc1394color_coding_t_vals.items()
+                if v == mode[-1] ]
 
         self._dll.dc1394_format7_set_roi(
             self._cam, uslot,
@@ -502,10 +562,14 @@ class Camera(object):
             s = fs.feature[i]
             if s.available:
                 if s.absolute_capable:
-                    _dll.dc1394_feature_set_absolute_control( self._cam, s.id, 1 )
+                    _dll.dc1394_feature_set_absolute_control(
+                        self._cam, s.id, 1
+                )
                 name = dc1394feature_t_vals[s.id]
                 self._features.append( name )
-                self.__dict__[name] = CameraProperty( self, name, s.id, s.absolute_capable)
+                self.__dict__[name] = CameraProperty(
+                    self, name, s.id, s.absolute_capable
+        )
 
         return self._features
 
@@ -530,13 +594,13 @@ class Camera(object):
     #                               PROPERTIES                                #
     ###########################################################################
     def broadcast():
-        doc = \
         """
-        This sets if the camera tries to synchronize with other cameras on the
-        bus. Note that behaviour might be strange if one camera tries to
-        broadcast and another not. Note also that this feature is currently only
-        supported under linux and I have not seen it working yet though I tried it
-        with cameras that should support it. So use on your own risk!
+        This sets if the camera tries to synchronize with other cameras on
+        the bus. Note that behaviour might be strange if one camera tries
+        to broadcast and another not. Note also that this feature is currently
+        only supported under linux and I have not seen it working yet though
+        I tried it with cameras that should support it. So use on your own
+        risk!
         """
         def fget(self):
             if not self._cam:
@@ -559,7 +623,10 @@ class Camera(object):
 
     @property
     def current_image(self):
-        "The current image of the camera. Threadsafe access to the current image."
+        """
+        The current image of the camera. Threadsafe access to the current
+        image.
+        """
         # We do proper locking
         self._new_image.acquire()
         self._new_image.wait()
@@ -620,9 +687,10 @@ class Camera(object):
         return self._cam.contents.vendor
 
     def mode():
-        doc = \
-        """The requested mode. If the camera is running, this is also
-        the actual mode."""
+        """
+        The requested mode. If the camera is running, this is also the
+        actual mode.
+        """
         def fget(self):
             return dc1394video_mode_t_vals[self._wanted_mode]
         def fset(self, mode):
@@ -635,16 +703,30 @@ class Camera(object):
             if mode not in self.modes:
                 raise ValueError, "This mode is not supported by this camera!"
 
-            self._wanted_mode, = [ k for k,v in dc1394video_mode_t_vals.items() if v == mode ]
+            self._wanted_mode, = [ k for k,v in
+                    dc1394video_mode_t_vals.items() if v == mode ]
 
             self._shape = [ mode[1], mode[0] ]
+            self._dtype = '>u1'
             if mode[-1] == 'Y8':
                 self._dtype = '>u1'
             elif mode[-1] == 'Y16':
                 self._dtype = '>u2'
-            elif mode[-1] == 'RGB':
+            elif mode[-1] == "YUV411":
                 self._dtype = '>u1'
+                self._shape = (self._shape[0] * self._shape[1] * 3 / 2 )
+            elif mode[-1] == "YUV422":
+                self._dtype = '>u1'
+                self._shape = (self._shape[0] * self._shape[1] * 3  * 4 / 6 , )
+            elif mode[-1] == "YUV444":
+                self._dtype = '>u1'
+                self._shape = (self._shape[0] * self._shape[1] * 3  )
+            elif mode[-1] == 'RGB8':
+                self._dtype = '>u1'
+                #self._shape = (self._shape[0] * self._shape[1] * 3  )
                 self._shape.append( 3 )
+            else:
+                raise NotImplementedError("Unknown image format" + mode[-1])
         return locals()
     mode = property(**mode())
 
@@ -657,8 +739,11 @@ class Camera(object):
                 raise RuntimeError, "The camera is not opened!"
 
             if self.running:
-                raise RuntimeError, "Can't change framerate while camera is running!"
-            self._wanted_frate, = [ k for k,v in dc1394framerate_t_vals.items() if v == framerate ]
+                raise RuntimeError(
+                    "Can't change framerate while camera is running!"
+                )
+            self._wanted_frate, = [ k for k,v in
+                        dc1394framerate_t_vals.items() if v == framerate ]
         return locals()
     fps = property(**fps())
 
@@ -668,7 +753,6 @@ class Camera(object):
         return self._wanted_speed
 
     def _operation_mode():
-        doc = \
         """
         This can toggle the camera mode into B mode (high speeds). This is
         a private property because you definitively do not want to change
@@ -717,17 +801,19 @@ class Camera(object):
 
     @property
     def features(self):
-        """Return all features of this camera. You can use __getattr__ to
-        directly access them then."""
+        """
+        Return all features of this camera. You can use __getattr__ to
+        directly access them then.
+        """
         return self._all_features
 
 
 class SynchronizedCams(object):
     def __init__(self, cam0,cam1):
-        """This class synchronizes two (not more!) cameras
-        by dropping frames from one until the timestamps
-        of the acquired pictures are in sync. Make sure that the
-        cameras are in the same mode (framerate, shutter)
+        """
+        This class synchronizes two (not more!) cameras by dropping frames
+        from one until the timestamps of the acquired pictures are in sync.
+        Make sure that the cameras are in the same mode (framerate, shutter)
 
         This function assumes point gray cameras which can do autosync
         """
