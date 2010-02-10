@@ -1,0 +1,37 @@
+2010. Feb. 08:
+	Processing the conversions.h to the library. There are a couple useful
+	things in here, which were missing so far. For example to use RGB
+	displays, these can help converting any image buffers to RGB8 formats.
+	I would suggest them implemented into the Image class.
+
+	Adding new enums:
+		bayer_method_t
+		stereo_method_t
+		
+	Now all the files: dc1394/*.h are added. The special functions for the
+	specific camera vendors and linux platform are skipped. Sometime they may
+	come, but at the moment I think this much is enough for a start.
+
+	All variable names are shortened by removing the dc1394 tag. If one wants,
+	still can do:
+	
+	import _dc1394core as dc1394
+	and use everything with dc1394.video_frame_t or similar.
+
+	Shutter, converting to ms: this is only meaningful if the camera is
+	absolute capable. Otherwise this is just a number, but the camera manual
+	may provide some conversion to it. The multiplication would only
+	complicate life in such a case.
+
+2010 Feb. 10:
+	Followed up the changes induced by the ones made in the core library. Now
+	it seems the system runs, the camera can take shots, and the basic
+	functionality did not change. For some reason I had some problems with the
+	_dtype part of the Camera class. I added an inocent declaration to the
+	__init__ function, and it runs fine.
+	In FORMAT7 mode now the camera mode changes to (0,0, FORMAT7_...), because
+	the real shape strongly depends on the ROI and the camera. Anyway the
+	current program_format7_mode takes care of setting the shape parameter
+	properly.
+
+
