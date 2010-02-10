@@ -6,7 +6,7 @@
 # Created by Holger Rapp on 2008-08-01.
 # Copyright (c) 2008 HolgerRapp@gmx.net. All rights reserved.
 
-from numpy import * 
+from numpy import *
 
 # import PyQt4.QtCore
 
@@ -16,7 +16,7 @@ def caputure(nframes, cam0, cam1 ):
     a2 = empty( (nframes,480,640), dtype="u1")
 
     cam0.start(); cam1.start()
-    
+
     ldiff = 100000000
     while 1:
         k,t1 = cam0.shot()
