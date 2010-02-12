@@ -23,6 +23,12 @@
 	may provide some conversion to it. The multiplication would only
 	complicate life in such a case.
 
+	Added the "vendor" and "model" keys to the cameralist returned by the
+	DC1394Library.enumerate_cameras(). The function opens each camera after
+	enumeration and gets these values from the camere descriptor. This way the
+	user may have a clue in advance which camera is which (when there is more
+	than one).
+
 2010 Feb. 10:
 	Followed up the changes induced by the ones made in the core library. Now
 	it seems the system runs, the camera can take shots, and the basic
@@ -34,4 +40,12 @@
 	current program_format7_mode takes care of setting the shape parameter
 	properly.
 
+2010 Feb. 11:
+	#Added a dump(filename, max=255) function to the Image class. This should
+	save the image to pgm format (P5) as quick as the system allows.
 
+	Another option would be to add this to the Camera class, because the
+	string buffer would save us some conversions, but the endianness may make
+	things a bit complicated.
+
+	

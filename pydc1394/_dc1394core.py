@@ -11,8 +11,8 @@ import sys
 try:
     _dll = cdll.LoadLibrary(find_library('dc1394'))
 except :
-	print "FATAL: dc1394 not found"
-	raise "RuntimeError"
+    print "FATAL: dc1394 not found"
+    raise "RuntimeError"
 #end try
 
 ###########################################################################
@@ -25,11 +25,11 @@ except :
 #A dict structure should be more flexible.
 
 def invert_dict( to_invert ):
-	res = {}
-	for (i,j) in to_invert.iteritems():
-		res[j] = i
-	#end for
-	return res
+    res = {}
+    for (i,j) in to_invert.iteritems():
+        res[j] = i
+    #end for
+    return res
 #end invert_dict
 
 #All error values to be interpreted:
@@ -86,10 +86,10 @@ ERROR_NUM =(ERROR_MAX-ERROR_MIN+1)
 
 #Logging enum
 log_vals={
-		768 : 'LOG_ERROR',
-		769 : 'LOG_WARNING',
-		770 : 'LOG_DEBUG',
-		}
+        768 : 'LOG_ERROR',
+        769 : 'LOG_WARNING',
+        770 : 'LOG_DEBUG',
+        }
 
 log_codes = invert_dict( log_vals )
 log_t = c_int
@@ -258,14 +258,14 @@ BYTE_ORDER_NUM = (BYTE_ORDER_MAX - BYTE_ORDER_MIN + 1)
 #A list of de-mosaicing techniques for Bayer-patterns.
 #The speed of the techniques can vary greatly, as well as their quality.
 bayer_method_vals = {
-		0 : 'BAYER_METHOD_NEAREST',
-		1 : 'BAYER_METHOD_SIMPLE',
-		2 : 'BAYER_METHOD_BILINEAR',
-		3 : 'BAYER_METHOD_HQLINEAR',
-		4 : 'BAYER_METHOD_DOWNSAMPLE',
-		5 : 'BAYER_METHOD_EDGESENSE',
-		6 : 'BAYER_METHOD_VNG',
-		7 : 'BAYER_METHOD_AHD'}
+        0 : 'BAYER_METHOD_NEAREST',
+        1 : 'BAYER_METHOD_SIMPLE',
+        2 : 'BAYER_METHOD_BILINEAR',
+        3 : 'BAYER_METHOD_HQLINEAR',
+        4 : 'BAYER_METHOD_DOWNSAMPLE',
+        5 : 'BAYER_METHOD_EDGESENSE',
+        6 : 'BAYER_METHOD_VNG',
+        7 : 'BAYER_METHOD_AHD'}
 bayer_method_codes = invert_dict( bayer_method_vals )
 
 bayer_method_t = c_int
@@ -277,8 +277,8 @@ BAYER_METHOD_NUM = BAYER_METHOD_MAX - BAYER_METHOD_MIN
 # Grey Research and Videre Design.
 
 stereo_method_vals = {
-		0 : 'STEREO_METHOD_INTERLACED',
-		1 : 'STEREO_METHOD_FIELD' }
+        0 : 'STEREO_METHOD_INTERLACED',
+        1 : 'STEREO_METHOD_FIELD' }
 stereo_method_codes = invert_dict( stereo_method_vals )
 
 stereo_method_t = c_int
@@ -412,10 +412,10 @@ FEATURE_MODE_MAX = max( feature_mode_vals.keys() )
 FEATURE_MODE_NUM = (FEATURE_MODE_MAX - FEATURE_MODE_MIN + 1)
 
 capture_flag_codes= {\
-		"CAPTURE_FLAGS_CHANNEL_ALLOC" : 0x00000001,\
-		"CAPTURE_FLAGS_BANDWIDTH_ALLOC" : 0x00000002,\
-		"CAPTURE_FLAGS_DEFAULT" : 0x00000004,\
-		"CAPTURE_FLAGS_AUTO_ISO" : 0x00000008	
+        "CAPTURE_FLAGS_CHANNEL_ALLOC" : 0x00000001,\
+        "CAPTURE_FLAGS_BANDWIDTH_ALLOC" : 0x00000002,\
+        "CAPTURE_FLAGS_DEFAULT" : 0x00000004,\
+        "CAPTURE_FLAGS_AUTO_ISO" : 0x00000008	
 }
 capture_flag_vals = invert_dict( capture_flag_codes )
 
@@ -588,35 +588,35 @@ video_frame_t._fields_ = [
 ]
 
 class format7mode_t(Structure):
-	pass
+    pass
 format7mode_t._fields_ = [
-		("present", bool_t ),
-		("size_x", c_uint32),
-		("size_y", c_uint32),
-		("max_size_x", c_uint32),
-		("max_size_y", c_uint32),
-		("pos_x", c_uint32),
-		("pos_y", c_uint32),
-		("unit_size_x", c_uint32),
-		("unit_size_y", c_uint32),
-		("unit_pos_x", c_uint32),
-		("unit_pos_y", c_uint32),
-		("color_codings", color_codings_t),
-		("color_coding", color_coding_t),
-		("pixnum", c_uint32),
-		("packet_size", c_uint32),
-		("unit_packet_size", c_uint32),
-		("max_packet_size", c_uint32),
-		("total_bytes", c_uint64),
-		("color_filter", color_filter_t),
-		]
+        ("present", bool_t ),
+        ("size_x", c_uint32),
+        ("size_y", c_uint32),
+        ("max_size_x", c_uint32),
+        ("max_size_y", c_uint32),
+        ("pos_x", c_uint32),
+        ("pos_y", c_uint32),
+        ("unit_size_x", c_uint32),
+        ("unit_size_y", c_uint32),
+        ("unit_pos_x", c_uint32),
+        ("unit_pos_y", c_uint32),
+        ("color_codings", color_codings_t),
+        ("color_coding", color_coding_t),
+        ("pixnum", c_uint32),
+        ("packet_size", c_uint32),
+        ("unit_packet_size", c_uint32),
+        ("max_packet_size", c_uint32),
+        ("total_bytes", c_uint64),
+        ("color_filter", color_filter_t),
+        ]
 #end of class format7mode_t
 
 class format7modeset_t(Structure):
-	pass
+    pass
 format7modeset_t._fields_=[
-		("mode", format7mode_t * VIDEO_MODE_FORMAT7_NUM),
-		]
+        ("mode", format7mode_t * VIDEO_MODE_FORMAT7_NUM),
+        ]
 #end of class format7modeset_t
 
 #End structures....
@@ -634,9 +634,9 @@ USE_RECOMMENDED  = -3
 # Global Error checking functions
 def _errcheck( rtype, func, arg ):
     """This function checks for the errortypes declared by the error_t above.
-		Use it for functions with restype=error_t to receive correct error
-		messages from the library.
-	"""
+        Use it for functions with restype=error_t to receive correct error
+        messages from the library.
+    """
     if rtype != 0:
         raise RuntimeError, "Error in dc1394 function call: %s" %error_vals[rtype]
     return rtype
@@ -1116,19 +1116,19 @@ _dll.dc1394_capture_is_frame_corrupt.argtypes = [ POINTER(camera_t), POINTER(vid
 #parameters: *source, *dest, width, height, source_color_coding, bits
 _dll.dc1394_convert_to_YUV422.restype = error_t
 _dll.dc1394_convert_to_YUV422.argtypes = [ POINTER(c_uint8), POINTER( c_uint8), c_uint32, \
-										c_uint32, c_uint32, color_coding_t, c_uint32 ]
+                                        c_uint32, c_uint32, color_coding_t, c_uint32 ]
 _dll.dc1394_convert_to_YUV422.errcheck = _errcheck
 
 #Converts an image buffer to MONO8
 _dll.dc1394_convert_to_MONO8.restype = error_t
 _dll.dc1394_convert_to_MONO8.argtypes = [ POINTER(c_uint8), POINTER( c_uint8), c_uint32, \
-										c_uint32, c_uint32, color_coding_t, c_uint32 ]
+                                        c_uint32, c_uint32, color_coding_t, c_uint32 ]
 _dll.dc1394_convert_to_MONO8.errcheck = _errcheck
 
 #Converts an image buffer to RGB8
 _dll.dc1394_convert_to_RGB8.restype = error_t
 _dll.dc1394_convert_to_RGB8.argtypes = [ POINTER(c_uint8), POINTER( c_uint8), c_uint32, \
-										c_uint32, c_uint32, color_coding_t, c_uint32 ]
+                                        c_uint32, c_uint32, color_coding_t, c_uint32 ]
 _dll.dc1394_convert_to_RGB8.errcheck = _errcheck
 
 
@@ -1138,7 +1138,7 @@ _dll.dc1394_convert_to_RGB8.errcheck = _errcheck
 # changes a 16bit stereo image (8bit/channel) into two 8bit images on top of each other
 _dll.dc1394_deinterlace_stereo.restype = error_t
 _dll.dc1394_deinterlace_stereo.argtypes = [ POINTER(c_uint8), POINTER( c_uint8), c_uint32, \
-										c_uint32 ]
+                                        c_uint32 ]
 _dll.dc1394_deinterlace_stereo.errcheck = _errcheck
 
 ##################################################################################################
@@ -1172,7 +1172,7 @@ _dll.dc1394_deinterlace_stereo.errcheck = _errcheck
 # color_filter_t tile, bayer_method_t method
 _dll.dc1394_bayer_decoding_8bit.restype = error_t
 _dll.dc1394_bayer_decoding_8bit.argtypes = [ POINTER(c_uint8), POINTER(c_uint8), c_uint32,\
-											c_uint32, color_filter_t, bayer_method_t ]
+                                            c_uint32, color_filter_t, bayer_method_t ]
 _dll.dc1394_bayer_decoding_8bit.errcheck = _errcheck
 
 # Perform de-mosaicing on an 16-bit image buffer
@@ -1180,7 +1180,7 @@ _dll.dc1394_bayer_decoding_8bit.errcheck = _errcheck
 # color_filter_t tile, bayer_method_t method, uint32_t bits
 _dll.dc1394_bayer_decoding_16bit.restype = error_t
 _dll.dc1394_bayer_decoding_16bit.argtypes = [ POINTER(c_uint8), POINTER(c_uint8), c_uint32,\
-											c_uint32, color_filter_t, bayer_method_t, c_uint32 ]
+                                            c_uint32, color_filter_t, bayer_method_t, c_uint32 ]
 _dll.dc1394_bayer_decoding_16bit.errcheck = _errcheck
 
 ##################################################################################################
@@ -1198,7 +1198,7 @@ _dll.dc1394_convert_frames.errcheck = _errcheck
 # in the output frame
 _dll.dc1394_debayer_frames.restype = error_t
 _dll.dc1394_debayer_frames.argtypes = [ POINTER(video_frame_t), POINTER(video_frame_t),\
-										bayer_method_t ]
+                                        bayer_method_t ]
 _dll.dc1394_debayer_frames.errcheck = _errcheck
 
 # De-interlacing of stereo data for cideo frames
@@ -1206,7 +1206,7 @@ _dll.dc1394_debayer_frames.errcheck = _errcheck
 # in the output frame
 _dll.dc1394_deinterlace_stereo_frames.restype = error_t
 _dll.dc1394_deinterlace_stereo_frames.argtypes = [POINTER(video_frame_t), POINTER(video_frame_t),\
-											stereo_method_t ]
+                                            stereo_method_t ]
 _dll.dc1394_deinterlace_stereo_frames.errcheck = _errcheck
 
 #####################################################################################
@@ -1227,24 +1227,24 @@ _dll.dc1394_set_registers.errcheck = _errcheck
 #Get/Set command registers (parameters as above):
 _dll.dc1394_get_control_registers.restype = error_t
 _dll.dc1394_get_control_registers.argtypes = [ POINTER(camera_t), c_uint64, POINTER(c_uint32),\
-												c_uint32 ]
+                                                c_uint32 ]
 _dll.dc1394_get_control_registers.errcheck = _errcheck
 
 _dll.dc1394_set_control_registers.restype = error_t
 _dll.dc1394_set_control_registers.argtypes = [ POINTER(camera_t), c_uint64, POINTER(c_uint32),\
-												c_uint32 ]
+                                                c_uint32 ]
 _dll.dc1394_set_control_registers.errcheck = _errcheck
 #get/set control register: the same with last parameter = 1.
 
 #Get/Set advanced features register (parameters as above):
 _dll.dc1394_get_adv_control_registers.restype = error_t
 _dll.dc1394_get_adv_control_registers.argtypes = [ POINTER(camera_t), c_uint64, POINTER(c_uint32),\
-												c_uint32 ]
+                                                c_uint32 ]
 _dll.dc1394_get_adv_control_registers.errcheck = _errcheck
 
 _dll.dc1394_set_adv_control_registers.restype = error_t
 _dll.dc1394_set_adv_control_registers.argtypes = [ POINTER(camera_t), c_uint64, POINTER(c_uint32),\
-												c_uint32 ]
+                                                c_uint32 ]
 _dll.dc1394_set_adv_control_registers.errcheck = _errcheck
 #get/set_advanced_control_register: calling with num_register=1
 
@@ -1252,24 +1252,24 @@ _dll.dc1394_set_adv_control_registers.errcheck = _errcheck
 #parameters: &camera, mode, offset, &value:
 _dll.dc1394_get_format7_register.restype = error_t
 _dll.dc1394_get_format7_register.argtypes = [ POINTER(camera_t), c_uint, c_uint64,\
-							POINTER(c_uint32) ]
+                            POINTER(c_uint32) ]
 _dll.dc1394_get_format7_register.errcheck = _errcheck
 
 _dll.dc1394_set_format7_register.restype = error_t
 _dll.dc1394_set_format7_register.argtypes = [ POINTER(camera_t), c_uint, c_uint64,\
-											c_uint32]
+                                            c_uint32]
 _dll.dc1394_set_format7_register.errcheck = _errcheck
 
 #Get/Set Absolute Control Registers
 #parameters &camera, feature, offset, &value
 _dll.dc1394_get_absolute_register.restype = error_t
 _dll.dc1394_get_absolute_register.argtypes = [ POINTER(camera_t), c_uint, c_uint64,\
-											POINTER(c_uint32) ]
+                                            POINTER(c_uint32) ]
 _dll.dc1394_get_absolute_register.errcheck = _errcheck
 
 _dll.dc1394_set_absolute_register.restype = error_t
 _dll.dc1394_set_absolute_register.argtypes = [ POINTER(camera_t), c_uint, c_uint64,\
-											c_uint32]
+                                            c_uint32]
 _dll.dc1394_set_absolute_register.errcheck = _errcheck
 
 #Get/Set PIO Feature Registers 
@@ -1309,7 +1309,7 @@ _dll.dc1394_set_strobe_register.errcheck = _errcheck
 #parameters: &camera, video_mode, &hsize, &vsize:
 _dll. dc1394_format7_get_max_image_size.restype = error_t
 _dll. dc1394_format7_get_max_image_size.argtypes = [ POINTER(camera_t), video_mode_t,\
-										POINTER( c_uint32), POINTER(c_uint32) ]
+                                        POINTER( c_uint32), POINTER(c_uint32) ]
 _dll. dc1394_format7_get_max_image_size.errcheck = _errcheck
 
 
@@ -1318,20 +1318,20 @@ _dll. dc1394_format7_get_max_image_size.errcheck = _errcheck
 #parameters: &camera, video_mode, &h_unit, &v_unit
 _dll.dc1394_format7_get_unit_size.restype = error_t
 _dll.dc1394_format7_get_unit_size.argtypes = [ POINTER(camera_t), video_mode_t,\
-											POINTER( c_uint32), POINTER(c_uint32) ]
+                                            POINTER( c_uint32), POINTER(c_uint32) ]
 _dll.dc1394_format7_get_unit_size.errcheck = _errcheck
 
 
 #Gets the current image size
 _dll.dc1394_format7_get_image_size.restype = error_t
 _dll.dc1394_format7_get_image_size.argtypes = [ POINTER(camera_t), video_mode_t,\
-											POINTER( c_uint32), POINTER(c_uint32) ]
+                                            POINTER( c_uint32), POINTER(c_uint32) ]
 _dll.dc1394_format7_get_image_size.errcheck = _errcheck
 
 #Sets the current image size
 _dll.dc1394_format7_set_image_size.restype = error_t
 _dll.dc1394_format7_set_image_size.argtypes = [ POINTER(camera_t), video_mode_t,\
-											c_uint32, c_uint32 ]
+                                            c_uint32, c_uint32 ]
 _dll.dc1394_format7_set_image_size.errcheck = _errcheck
 
 
@@ -1340,13 +1340,13 @@ _dll.dc1394_format7_set_image_size.errcheck = _errcheck
 #parameters: &camera, video_mode, &left, &top
 _dll.dc1394_format7_get_image_position.restype = error_t
 _dll.dc1394_format7_get_image_position.argtypes = [ POINTER(camera_t), video_mode_t,\
-											POINTER( c_uint32), POINTER(c_uint32) ]
+                                            POINTER( c_uint32), POINTER(c_uint32) ]
 _dll.dc1394_format7_get_image_position.errcheck = _errcheck
 
 #Set image position:
 _dll.dc1394_format7_set_image_position.restype = error_t
 _dll.dc1394_format7_set_image_position.argtypes = [ POINTER(camera_t), video_mode_t,\
-											 c_uint32, c_uint32 ]
+                                             c_uint32, c_uint32 ]
 _dll.dc1394_format7_set_image_position.errcheck = _errcheck
 
 #Gets the unit positions for a given mode. The image position can 
@@ -1354,32 +1354,32 @@ _dll.dc1394_format7_set_image_position.errcheck = _errcheck
 #parameters: &camera, video_mode, &h_unit, &v_unit
 _dll.dc1394_format7_get_unit_position.restype = error_t
 _dll.dc1394_format7_get_unit_position.argtypes = [ POINTER(camera_t), video_mode_t,\
-											POINTER( c_uint32), POINTER(c_uint32) ]
+                                            POINTER( c_uint32), POINTER(c_uint32) ]
 _dll.dc1394_format7_get_unit_position.errcheck = _errcheck
 
 #color coding:
 #Gets the current color coding
 _dll.dc1394_format7_get_color_coding.restype = error_t
 _dll.dc1394_format7_get_color_coding.argtypes = [ POINTER(camera_t), video_mode_t,\
-												POINTER(color_coding_t) ]
+                                                POINTER(color_coding_t) ]
 _dll.dc1394_format7_get_color_coding.errcheck = _errcheck
 
 #Gets the list of color codings available for this mode
 _dll.dc1394_format7_get_color_codings.restype = error_t
 _dll.dc1394_format7_get_color_codings.argtypes = [ POINTER(camera_t), video_mode_t,\
-												POINTER(color_codings_t) ]
+                                                POINTER(color_codings_t) ]
 _dll.dc1394_format7_get_color_codings.errcheck = _errcheck
 
 #Sets the current color coding
 _dll.dc1394_format7_set_color_coding.restype = error_t
 _dll.dc1394_format7_set_color_coding.argtypes = [ POINTER(camera_t), video_mode_t,\
-												color_coding_t ]
+                                                color_coding_t ]
 _dll.dc1394_format7_set_color_coding.errcheck = _errcheck
 
 #Gets the current color filter
 _dll.dc1394_format7_get_color_filter.restype = error_t
 _dll.dc1394_format7_get_color_filter.argtypes = [ POINTER(camera_t), video_mode_t,\
-										POINTER(color_filter_t) ]
+                                        POINTER(color_filter_t) ]
 _dll.dc1394_format7_get_color_filter.errcheck = _errcheck
 
 #packet 
@@ -1388,55 +1388,55 @@ _dll.dc1394_format7_get_color_filter.errcheck = _errcheck
 #parameters: &camera, video_mode, &unit_bytes, &max_bytes
 _dll.dc1394_format7_get_packet_parameters.restype = error_t
 _dll.dc1394_format7_get_packet_parameters.argtypes = [ POINTER(camera_t), video_mode_t,\
-											POINTER( c_uint32), POINTER(c_uint32) ]
+                                            POINTER( c_uint32), POINTER(c_uint32) ]
 _dll.dc1394_format7_get_packet_parameters.errcheck = _errcheck
 
 #Gets the current packet size
 #parameters: &camera, video_mode, &packet size
 _dll.dc1394_format7_get_packet_size.restype = error_t
 _dll.dc1394_format7_get_packet_size.argtypes = [ POINTER(camera_t), video_mode_t,\
-											POINTER( c_uint32 ) ]
+                                            POINTER( c_uint32 ) ]
 _dll.dc1394_format7_get_packet_size.errcheck = _errcheck
 
 #Sets the current packet size
 _dll.dc1394_format7_set_packet_size.restype = error_t
 _dll.dc1394_format7_set_packet_size.argtypes = [ POINTER(camera_t), video_mode_t,\
-											c_uint32 ]
+                                            c_uint32 ]
 _dll.dc1394_format7_set_packet_size.errcheck = _errcheck
 
 #Gets the recommended packet size. Ignore if zero.
 #parameters: &camera, video_mode, &packet size
 _dll.dc1394_format7_get_recommended_packet_size.restype = error_t
 _dll.dc1394_format7_get_recommended_packet_size.argtypes = [ POINTER(camera_t), video_mode_t,\
-											POINTER( c_uint32 ) ]
+                                            POINTER( c_uint32 ) ]
 _dll.dc1394_format7_get_recommended_packet_size.errcheck = _errcheck
 
 #Gets the number of packets per frame.
 #parameters: &camera, video_mode, &packets per frame
 _dll.dc1394_format7_get_packets_per_frame.restype = error_t
 _dll.dc1394_format7_get_packets_per_frame.argtypes = [ POINTER(camera_t), video_mode_t,\
-											POINTER( c_uint32 ) ]
+                                            POINTER( c_uint32 ) ]
 _dll.dc1394_format7_get_packets_per_frame.errcheck = _errcheck
 
 #Gets the data depth (e.g. 12, 13, 14 bits/pixel)
 #parameters: &camera, video_mode, &data_depth
 _dll.dc1394_format7_get_data_depth.restype = error_t
 _dll.dc1394_format7_get_data_depth.argtypes = [ POINTER(camera_t), video_mode_t,\
-											POINTER( c_uint32 ) ]
+                                            POINTER( c_uint32 ) ]
 _dll.dc1394_format7_get_data_depth.errcheck = _errcheck
 
 #Gets the frame interval in float format
 #parameters: &camera, video_mode, &interval
 _dll.dc1394_format7_get_frame_interval.restype = error_t
 _dll.dc1394_format7_get_frame_interval.argtypes = [ POINTER(camera_t), video_mode_t,\
-											POINTER( c_float ) ]
+                                            POINTER( c_float ) ]
 _dll.dc1394_format7_get_frame_interval.errcheck = _errcheck
 
 #Gets the number of pixels per image frame
 #parameters: &camera, video_mode, &pixnum
 _dll.dc1394_format7_get_pixel_number.restype = error_t
 _dll.dc1394_format7_get_pixel_number.argtypes = [ POINTER(camera_t), video_mode_t,\
-											POINTER( c_uint32 ) ]
+                                            POINTER( c_uint32 ) ]
 _dll.dc1394_format7_get_pixel_number.errcheck = _errcheck
 
 #Get the total number of bytes per frame. This includes padding 
@@ -1444,7 +1444,7 @@ _dll.dc1394_format7_get_pixel_number.errcheck = _errcheck
 #parameters: &camera, video_mode, &total_bytes
 _dll.dc1394_format7_get_total_bytes.restype = error_t
 _dll.dc1394_format7_get_total_bytes.argtypes = [ POINTER(camera_t), video_mode_t,\
-											POINTER( c_uint64) ]
+                                            POINTER( c_uint64) ]
 _dll.dc1394_format7_get_total_bytes.errcheck = _errcheck
 
 #These functions get the properties of (one or all) format7 mode(s)
@@ -1457,7 +1457,7 @@ _dll.dc1394_format7_get_modeset.errcheck = _errcheck
 #Gets the properties of a Format_7 mode
 _dll.dc1394_format7_get_mode_info.restype = error_t
 _dll.dc1394_format7_get_mode_info.argtypes = [ POINTER(camera_t), video_mode_t,\
-												POINTER(format7mode_t)]
+                                                POINTER(format7mode_t)]
 _dll.dc1394_format7_get_mode_info.errcheck = _errcheck
 
 #Joint function that fully sets a certain ROI taking all parameters into account.
@@ -1466,14 +1466,14 @@ _dll.dc1394_format7_get_mode_info.errcheck = _errcheck
 #parameters: &camera, video_mode, color_coding, packet_size, left, top, width, height
 _dll.dc1394_format7_set_roi.restype = error_t
 _dll.dc1394_format7_set_roi.argtypes = [ POINTER(camera_t), video_mode_t, color_coding_t,\
-										c_int32, c_int32, c_int32, c_int32, c_int32 ]
+                                        c_int32, c_int32, c_int32, c_int32, c_int32 ]
 _dll.dc1394_format7_set_roi.errcheck = _errcheck
 
 
 _dll.dc1394_format7_get_roi.restype = error_t
 _dll.dc1394_format7_get_roi.argtypes = [ POINTER(camera_t), video_mode_t, color_coding_t,\
-										POINTER(c_int32), POINTER(c_int32), POINTER(c_int32),\
-										POINTER(c_int32), POINTER(c_int32) ]
+                                        POINTER(c_int32), POINTER(c_int32), POINTER(c_int32),\
+                                        POINTER(c_int32), POINTER(c_int32) ]
 _dll.dc1394_format7_get_roi.errcheck = _errcheck
 
 
@@ -1485,7 +1485,7 @@ _dll.dc1394_format7_get_roi.errcheck = _errcheck
 # parameters: &camera, video_mode, &width, &height
 _dll.dc1394_get_image_size_from_video_mode.restype = error_t
 _dll.dc1394_get_image_size_from_video_mode.argtypes = [ POINTER(camera_t), video_mode_t,\
-										POINTER(c_int32), POINTER(c_int32) ]
+                                        POINTER(c_int32), POINTER(c_int32) ]
 _dll.dc1394_get_image_size_from_video_mode.errcheck = _errcheck
 
 
@@ -1510,7 +1510,7 @@ _dll.dc1394_get_color_coding_bit_size.errcheck = _errcheck
 #Returns the color coding from the video mode. Works with scalable image formats too.
 _dll.dc1394_get_color_coding_from_video_mode.restype = error_t
 _dll.dc1394_get_color_coding_from_video_mode.argtypes = [ POINTER(camera_t), video_mode_t,\
-														POINTER(color_coding_t) ]
+                                                        POINTER(color_coding_t) ]
 _dll.dc1394_get_color_coding_from_video_mode.errcheck = _errcheck
 
 #Tells whether the color mode is color or monochrome
