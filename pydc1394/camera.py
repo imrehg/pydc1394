@@ -83,14 +83,18 @@ class DC1394Library(object):
             #than mere GUID and unitIDs
             #also, if this fails, we have a problem:
             cam = self._dll.dc1394_camera_new(self.h, ids.guid)
+            
+            #it seems not all cameras have these fields:
+            vendor = cam.contents.vendor if cam.contents.vendor else "unknown"
+            model = cam.contents.model if cam.contents.model else "unknown"
 
             clist.append(
                 { "unit": ids.unit,
                     # For what do we need this L anyway?!?!
                   #"guid": hex(ids.guid)[2:].strip("L"),
                   "guid": ids.guid,
-                  "vendor":	cam.contents.vendor,
-                  "model":	cam.contents.model,
+                  "vendor":	vendor,
+                  "model":	model,
                 }
             )
 
@@ -138,36 +142,6 @@ class Image(ndarray):
     # TODO add here:
     # depth -> number of bits/pixel in the image
     # endianness or bytes are swapped bool (framge -> little_endian == False)
-
-    #this is not the right place, has to be relocated to the Camera class.
-    def dump(self, filename, max = 255, timestamp=0):
-        """ saves the current image in pgm format. 
-            This should be done as fast as possible, so try it quick and dirty.
-            The user must take care of:
-             - the filename 
-             - the image is uint8 or uint16 (the format is specified for this)
-             - max is set correctly
-
-            filename:	the file name to save to
-            max:		255 for uint8 >255 and < 65536 for uint16
-            timestamp:	added to the file as a note
-        """
-        height, width = self.shape
-
-        fp = file( filename, 'wb')
-        fp.write('5P\n')
-        fp.write("#time: %f\n" %timestamp)
-        txt = "%d %d %d\n" %(width, height, max)
-        fp.write(txt)
-
-        if max < 256 :
-            fp.write(self.tostring())
-        else:
-            #the byte order does matter. The format is defined as big endian!
-            fp.write(self.view(dtype='>u2').tostring())
-        #end if
-        fp.close()
-    #end of dump
 
 #end of class Image
 
@@ -333,6 +307,7 @@ class CameraProperty(object):
         k = bool_t()
         self._dll.dc1394_feature_is_switchable(self._cam._cam, self._id, byref(k))
         return bool(k.value)
+    #end of can_be_disabled => on/off capable
 
     def on():
         doc = """\
@@ -357,6 +332,7 @@ class CameraProperty(object):
             #end if
         return locals()
     on = property(**on())
+    #end self.on
 
     @property
     def pos_modes(self):
@@ -373,6 +349,7 @@ class CameraProperty(object):
         modes = feature_modes_t()
         _dll.dc1394_feature_get_modes(self._cam._cam, self._id, byref(modes))
         return [ feature_mode_vals[modes.modes[i]] for i in xrange(modes.num) ]
+    #end pos_modes
 
     def mode():
         doc = "The current control mode this feature is running in"
@@ -405,7 +382,92 @@ class CameraProperty(object):
             #end if
         return locals()
     mode = property(**mode())
+    #end of mode
 
+#end of common CameraProperty
+#these properties work only for the trigger, but there they are needed
+#class Trigger(CamProperty):
+    def polarity_capable(self):
+        "Any use of polarity?"
+        finfo = feature_info_t()
+        finfo.id = self._id
+        _dll.dc1394_feature_get( self._cam._cam,  byref(finfo) )
+        #polarity_capable is an bool_t = int field:
+        return bool( finfo.polarity_capable )
+    #end of can_be_disabled => on/off capable
+
+    def polarity():
+        doc = "Which polarity matters for the external trigger"
+        def fget(self):
+            pol = trigger_polarity_t()
+            _dll.dc1394_external_trigger_get_polarity( self._cam._cam, byref(pol))
+            if trigger_polarity_vals.has_key( pol.value ):
+                return trigger_polarity_vals[ pol.value ]
+            else :
+                return pol.value
+        #end fget
+
+        def fset(self, pol):
+            if self.polarity_capable:
+                if trigger_polarity_codes.has_key( pol ):
+                    key = trigger_polarity_codes[ pol ]
+                    _dll.dc1394_external_trigger_set_polarity( self._cam._cam, key )
+                else:
+                    print "Invalid external trigger polarity: %s" %pol
+                #end if
+        #end fset
+        return locals()
+    polarity = property( **polarity())
+    #end polarity
+    
+    def pos_polarities(self):
+        return trigger_polarity_codes.keys()
+    #end pos_polarities
+
+    def source():
+        doc = "Actual source of the external trigger"
+        def fget(self):
+            source = trigger_source_t()
+            _dll.dc1394_external_trigger_get_source(self._cam._cam, byref(source))
+            return trigger_source_vals[ source.value ]
+        #end of fget
+
+        def fset(self, source):
+            if trigger_source_codes.has_key( source ):
+                key = trigger_source_codes[ source ]
+                _dll.dc1394_external_trigger_set_source(self._cam._cam, key)
+            else:
+                print "Invalid external trigger source: %s" %source
+        #end fset
+        return locals()
+    source = property( **source())
+    #end of source
+
+    def pos_sources(self):
+        """ List the possible external trigger sources of the camera"""
+        src = trigger_sources_t()
+        _dll.dc1394_external_trigger_get_supported_sources(self._cam._cam, byref(src))
+        return [ trigger_source_vals[src.sources[i]] for i in xrange(src.num) ]
+    #end of pos_sources
+
+    def software_trigger():
+        doc = "Set and get if the software trigger is active"
+        def fget(self):
+            res = switch_t()
+            _dll.dc1394_software_trigger_get_power(self._cam._cam, byref(res))
+            return bool( res.value )
+        #end of fget
+        def fset(self, value):
+            k = bool(value)
+            _dll.dc1394_software_trigger_set_power(self._cam._cam, k)
+        #end fset
+        return locals()
+    software_trigger = property( **software_trigger() )
+    #end of software_trigger
+
+#end Trigger
+
+#end of CameraProperty
 
 class Camera(object):
     def __init__( self, lib, guid, mode = None, framerate = None, isospeed = 400, **feat):
@@ -476,12 +538,18 @@ class Camera(object):
                 self.get_framerates_for_mode(self.mode)[0]
 
         # Convert framerate
-        self._wanted_frate, = [ k for k,v in framerate_vals.items()
-                   if v == framerate ]
+        if framerate_codes.has_key( framerate ):
+            self._wanted_frate = framerate_codes[ framerate ]
+        else:
+            print "Unknown framerate %s" %framerate
+        #end if
 
         # Set isospeed
-        self._wanted_speed, = [ k for k,v in speed_vals.items()
-                   if v == isospeed ]
+        if speed_codes.has_key( isospeed ):
+            self._wanted_speed = speed_codes[ isospeed ]
+        else :
+            print "Unknown isospeed: %d" %isospeed
+        #end if
 
         # If we are not using a FORMAT_7 format, set the framerate feature to auto
         # again. This control is not available on all cameras, if it is missing,
@@ -872,7 +940,10 @@ class Camera(object):
 
             if self.running:
                 raise RuntimeError, "Can't change framerate while camera is running!"
-            self._wanted_frate, = [ k for k,v in framerate_vals.items() if v == framerate ]
+            #end if
+            if framerate_codes.has_key( framerate ):
+                self._wanted_frate = framerate_codes[ framerate ]
+            #end if
         return locals()
     fps = property(**fps())
 

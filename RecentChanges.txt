@@ -41,11 +41,31 @@
 	properly.
 
 2010 Feb. 11:
-	#Added a dump(filename, max=255) function to the Image class. This should
-	save the image to pgm format (P5) as quick as the system allows.
+    Dumping files: latter, may be implemented. The pgm format is easy to dump,
+    and universal enough for most applications (8 and 16 bit gray scale ones).
 
-	Another option would be to add this to the Camera class, because the
-	string buffer would save us some conversions, but the endianness may make
-	things a bit complicated.
+2010 Feb. 12:
+    Interesting NULL pointer access at the DC1394Library.enumerate_cameras,
+    when accessing vendor or model informations. Now added a test that they
+    should be used only when not NULL pointers.
 
-	
+    Also found some places where the new ..._codes dict can be used, and the
+    for... taken over by a ..._codes.has_key() function.
+
+    It is a bit weird why the trigger_source_vals... is trigger_source_0_vals.
+    Now it is set to the simpler version: trigger_source_vals.
+    
+    Added trigger_polarity, trigger_source, trigger.pos_polarities,
+    trigger.pos_sources.
+
+    Interestingly, the trigger_get_polarity returns 1, which should be 704 or
+    705. There must be something wrong.
+        Some various resources, such as the help page of the dc1394 library
+        itself states 0 and 1 as the values. The control.c of the dc1394
+        library itself tests for True and False values only, and does not even
+        use this enum. For now let us fall back to this in the _dc1394core
+        until something else comes up.
+    
+    Added the software_trigger variable as well. Its possible values are True
+    and False.
+
