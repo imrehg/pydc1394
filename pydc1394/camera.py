@@ -362,7 +362,7 @@ class Camera(object):
                 self.__getattribute__(f).mode = 'manual'
 
         # Set acquisition mode and framerate
-        self.mode = mode if mode is not None else self._all_modes[0]
+        self.mode = tuple(mode) if mode is not None else self._all_modes[0]
         self.fps = framerate = framerate or \
                 self.get_framerates_for_mode(self.mode)[0]
 
