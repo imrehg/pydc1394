@@ -69,3 +69,73 @@
     Added the software_trigger variable as well. Its possible values are True
     and False.
 
+2010 Feb. 15:
+    A bit of work on the format7 mode. Problem: the (0,0) is justified in the
+    core lib, but not in the mode setting. One needs the actual camera image
+    size to return valid numbers for the images. Otherwise the whole thing
+    goes to hell in format7 mode.
+    And format7 is the mode sometimes we do want.
+
+    So, the Camera.mode now checks for format7, and if such one is set, it
+    requests the maximal resolution from the camera. Then sends it back. This
+    may be not optimal, perhaps the actual image size would be better. The
+    issue between the Camera.program_format7_mode() and this has to be
+    resolved.
+    
+    The problem is: for some reason the ROI setting messes the whole up on the
+    HAMAMATSU ORCA which was used for testing. Why?
+
+2010 Feb. 17:
+    Most of the strange error messages came with color_coding. So, let us
+    check the color coding. Added a part to the Camera.program_format7_mode:
+    - read out the current color coding
+    - is another one requested?
+    - is this other one supported by the given mode? Then set it
+    - or leave the current one, and set the ROI
+
+    Another issue may come up: the image position and size has a unit, which
+    is the minimum step to use for setting them. It may be different from 1.
+    At the moment this is not tested when the ROI is set. Actually the ROI is
+    equivalent with setting the image size and offset separately.
+
+2010 Feb. 19:
+    Camera.mode _dtype settings: both gray scale and RGB have 8 bit and 16
+    bit possibilities. Therefore to define the proper data type of the image,
+    one has to check if '8' or '16' are present in the color coding, and then 
+    if RGB is present.
+    For the case of YUV modes the YUV422 the pixel is 16 bits, for YUV411
+    it is 12 bits, but the image has to be converted... At the moment the
+    Camera.mode sets unsigned 8 bit integer, and displays a warning.
+
+    Also add some docstrings to the various functions.
+
+    Framerate, isospeed, video mode:
+    All functions use an internal variable to store the desired value.
+    These are actually set to the camera when the capture stars with the
+    Camera.start() function. Thus they are off synch until a Camera.start() is
+    called.
+
+    This also means, that all features may be asked about video modes and
+    properties which are actually not set, only tested if those values are
+    theoretically in the available range.
+
+    Fortunately the dc1394 seems to allow such testing, as one can see it with
+    the FORMAT7 video mode, where the image size is asked from the camera.
+
+    A little bug with the Camera.mode.fset(): the provided mode was tested as
+    a text before a possible tupple was converted to text. Now this is fixed.
+
+    #a test run: try with direct feature setting; so far it looks fine:
+    standard mode setting, framerate changing, isospeed, etc. works.
+    With the new version the reported values and features are in synch with
+    the camera.
+
+2010. Feb. 20:
+    Camera.isospeed: the operation mode setting is now here, with exception
+    handling.
+
+    Added unit tests to the program_format7_mode(). Also the Camera._dtype is
+    handled by the mode changing, so that is not needed here anymore.
+    
+    The returned fps value is not correct for the FORMAT7 mode. This has to be
+    double checked.
