@@ -399,19 +399,16 @@ class CameraProperty(object):
         #end of fget
 
         def fset(self, value):
-            if self._name.lower() == "trigger":
-                if trigger_mode_codes.has_key( value ):
+            if value in self.pos_modes:
+                if self._name.lower() == "trigger":
                     key = trigger_mode_codes[ value ]
                     _dll.dc1394_external_trigger_set_mode(self._cam._cam, key)
                 else:
-                    print "invalid external trigger mode: %s" %value
+                    key = feature_mode_codes[ value ]
+                    _dll.dc1394_feature_set_mode(self._cam._cam, self._id,key )
                 #end if
-            #end if
-            if feature_mode_codes.has_key( value ):
-                key = feature_mode_codes[ value ]
-                _dll.dc1394_feature_set_mode(self._cam._cam, self._id,key )
             else:
-                print "Invalid feature mode: %s" %value
+                    print "Invalid %s mode: %s" %(self._name, value)
             #end if
         return locals()
     mode = property(**mode())

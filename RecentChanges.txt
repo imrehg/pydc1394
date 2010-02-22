@@ -139,3 +139,11 @@
     
     The returned fps value is not correct for the FORMAT7 mode. This has to be
     double checked.
+
+2010 Feb. 22:
+    One of our camera does not respond to trigger mode changes, and does not
+    allow changes in the trigger mode... Weird.
+    Anyway: the fset of the modes should check agains the available modes, not
+    the whole dict of possible values.
+    Bug: after setting the trigger mode, the program did not return: the else
+    statement was missing: -> fixed and simplified.
