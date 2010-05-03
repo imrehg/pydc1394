@@ -21,3 +21,4 @@
 # and the pydc1394 contributors (see README File)
 
 from camera import Camera, DC1394Library, SynchronizedCams
+
