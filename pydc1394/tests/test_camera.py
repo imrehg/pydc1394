@@ -2,17 +2,17 @@
 # encoding: utf-8
 #
 # This file is part of pydc1394.
-# 
+#
 # pydc1394 is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
-# 
+#
 # pydc1394 is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Lesser General Public
 # License along with pydc1394.  If not, see
 # <http://www.gnu.org/licenses/>.
@@ -23,11 +23,12 @@
 
 import nose
 from nose.tools import *
+from nose.plugins.attrib import attr
 
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
-from camera import DC1394Library, Camera
+from camera import DC1394Library, Camera, CameraError
 
 # Is a camera connected?
 def _has_cam_attached():
@@ -72,6 +73,28 @@ class TestInstantiation(LibBase):
         c = Camera(self.l, cams[0]['guid'])
         c.close()
 
+    @need_cam
+    @raises(CameraError)
+    def test_failure(self):
+        Camera(self.l, "deadbeef")
+
+    @need_cam
+    @raises(CameraError)
+    def test_invalid_mode(self):
+        cams = self.l.enumerate_cameras()
+        c = Camera(self.l, cams[0]['guid'], mode=(23323,232323,"Y16"))
+        c.close()
+
+    @need_cam
+    @raises(CameraError)
+    def test_invalid_isospeed(self):
+        cams = self.l.enumerate_cameras()
+        c = Camera(self.l, cams[0]['guid'], isospeed=12393)
+        c.start()
+        c.shot()
+        c.stop()
+        c.close()
+
 # From now on, we assume that we can get a camera instance
 class TestCamera(CamBase):
     @need_cam
@@ -83,6 +106,7 @@ class TestCamera(CamBase):
         self.c.stop()
 
     @need_cam
+    @attr('slow')
     def test_reset(self):
         self.c.start()
         self.c.reset_bus()
