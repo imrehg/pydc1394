@@ -20,6 +20,7 @@
 # Copyright (C) 2009, 2010 by Holger Rapp <HolgerRapp@gmx.net>
 # and the pydc1394 contributors (see README File)
 
+import time
 
 import nose
 from nose.tools import *
@@ -53,12 +54,17 @@ class LibBase(object):
     @need_cam
     def tearDown(self):
         self.l.close()
+
 class CamBase(LibBase):
     @need_cam
     def setUp(self):
         LibBase.setUp(self)
         cams = self.l.enumerate_cameras()
         self.c = Camera(self.l, cams[0]['guid'])
+        mode = self.c.modes[0]
+        self.c.mode = mode
+        self.c.fps = self.c.get_framerates_for_mode(mode)[-1]
+        
     @need_cam
     def tearDown(self):
         self.c.stop()
@@ -108,10 +114,14 @@ class TestCamera(CamBase):
     @need_cam
     @attr('slow')
     def test_reset(self):
+        print self.c.mode
+        print self.c.framerate.val
         self.c.start()
         self.c.reset_bus()
 
         eq_(self.c.running, False)
+        # Most cameras need a second here.
+        time.sleep(.1)
 
         self.c.start()
         self.c.shot()
@@ -123,9 +133,10 @@ class TestCamera(CamBase):
         try:
             self.c.shutter.mode = 'manual'
             smin, smax = self.c.shutter.range
-            val = smin + (smax-smin)/2.
+            val = round(smin + (smax-smin)/2.)
             self.c.shutter.val = val
-            assert_almost_equal(self.c.shutter.val, val, 1)
+            # Setting the fps is just approximate on most cameras
+            ok_( abs(self.c.shutter.val-val) < 2.)
         except AttributeError:
             pass # Maybe camera does not support this
 
