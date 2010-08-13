@@ -277,7 +277,6 @@ class CameraProperty(object):
                 if self._name == "shutter" :
                     # We want shutter in ms -> if it is absolute capable.
                     val.value *= 1000.
-
             else:
                 val = c_uint32()
                 self._dll.dc1394_feature_get_value(
@@ -297,7 +296,7 @@ class CameraProperty(object):
                     val = float(value)
                     # We want shutter in ms
                     if self._name == "shutter":
-                        value /= 1000.
+                        val /= 1000.
                     self._dll.dc1394_feature_set_absolute_value(
                         self._cam._cam, self._id, val
                     )

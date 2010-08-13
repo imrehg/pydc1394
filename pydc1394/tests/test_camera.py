@@ -118,5 +118,17 @@ class TestCamera(CamBase):
         self.c.stop()
 
 
+    @need_cam
+    def test_manual_shutter_time_setting(self):
+        try:
+            self.c.shutter.mode = 'manual'
+            smin, smax = self.c.shutter.range
+            val = smin + (smax-smin)/2.
+            self.c.shutter.val = val
+            assert_almost_equal(self.c.shutter.val, val, 1)
+        except AttributeError:
+            pass # Maybe camera does not support this
+
+
 
 
