@@ -594,7 +594,7 @@ class Camera(object):
             #set the framerate:
             #does this work if mode is set to a FORMAT7 mode?
             #now it does, it does nothing:
-            if 'FORMAT7' not in self.mode[-1].upper():
+            if 'FORMAT7' not in self.mode:
                 #it sets the framerate if it is available, or nothing
                 self.fps = framerate = framerate or \
                         self.get_framerates_for_mode(self.mode)[0]
@@ -621,7 +621,6 @@ class Camera(object):
                     continue
                 self.__getattribute__(n).val = v
         except CameraError, e:
-            print "e: %s" % (e)
             self.close()
             raise
 
@@ -692,11 +691,16 @@ class Camera(object):
         This function resets the bus the camera is attached to. Note that
         this means that all cameras have to reenumerate and will drop frames.
         So only use this if you know what you are doing.
+
+        Note that the camera is closed after this; so if you want to use
+        it again, you have to call :method:`open` again.
         """
         if self.running:
             self.stop()
 
         self._dll.dc1394_reset_bus( self._cam )
+
+        self.close()
 
     def shot( self ):
         """
@@ -843,14 +847,10 @@ class Camera(object):
             raise CameraError("The camera is not opened!")
 
         modes = video_modes_t()
-        supmodes = []
 
         _dll.dc1394_video_get_supported_modes( self._cam, byref(modes))
 
-        for i in range(modes.num):
-            supmodes.append( video_mode_vals[modes.modes[i]] )
-
-        return supmodes
+        return [ video_mode_details[modes.modes[i]] for i in range(modes.num)]
 
     def __get_all_features( self ):
         """
@@ -1012,14 +1012,14 @@ class Camera(object):
         doc = \
             """ The actual video mode of the camera.
                 (one can query as a variable or set it.
-                One can set a tupple (hsize, vsize, 'color_coding') or a
+                One can set a tuple (hsize, vsize, 'color_coding') or a
                 simple text '640x480_RGB8'. Or simply one of the modes,
                 such as: modes[0].
 
                 If FORMAT7 mode is selected, it sets to the camera to maximal
                 resolution. This deletes the previous ROI.
 
-                When queried, it returns the actual resolution in a tupple:
+                When queried, it returns the actual resolution in a tuple:
                 (hsize, vsize, "color_mode")
             """
         def fget(self):
@@ -1050,30 +1050,27 @@ class Camera(object):
             if not self._cam:
                 raise CameraError("The camera is not opened!")
 
-            #one can pass here a string like camera.modes[0]
-            #or a full tuple (640,480,'Y8')...
-            #convert it to a valid text key:
-            if mode.__class__.__name__ != 'str' :
-                if "FORMAT7" not in mode[-1].upper():
-                    mode = "%dx%d_%s" %(mode[0],mode[1],mode[2])
-                else:
-                    #a format7 mode is only the mode name:
-                    mode = mode[-1]
-            #...so we can search in the video_mode_codes
+
+            if isinstance(mode, basestring):
+                mode_string = mode
+                mode = video_mode_details[video_mode_codes[mode]]
+            else:
+                mode_string = "%sx%s_%s" % mode
+            mode_code = video_mode_codes.get(mode_string, None)
 
             if mode not in self.modes:
                 raise CameraError("This mode is not supported by this camera!")
 
             #if it is a supported mode, then the video_mode_codes has this key:
             #keep self._wanted_mode for historical reasons (and comfort)
-            self._wanted_mode = video_mode_codes[ mode ]
+            self._wanted_mode = mode_code
             #now set the mode in the camera:
             self._dll.dc1394_video_set_mode( self._cam, self._wanted_mode)
 
             #now we have the code, we can set the mode back to provide
             #a return value:
             mode = video_mode_details[ self._wanted_mode ]
-            #from now mode is a tupple...
+            #from now mode is a tuple...
             if "FORMAT7" in mode[-1].upper():
                 hsize = c_uint32()
                 vsize = c_uint32()

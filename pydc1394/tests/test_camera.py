@@ -20,32 +20,57 @@
 # Copyright (C) 2009, 2010 by Holger Rapp <HolgerRapp@gmx.net>
 # and the pydc1394 contributors (see README File)
 
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
+
 import time
+from collections import defaultdict
 
 import nose
 from nose.tools import *
 from nose.plugins.attrib import attr
 
-import sys, os
-sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
-
 from camera import DC1394Library, Camera, CameraError
 
 # Is a camera connected?
-def _has_cam_attached():
+_has = defaultdict(lambda bool: False)
+def _check_camera_and_features():
     l = DC1394Library()
-    if len(l.enumerate_cameras()):
-        return True
-    return False
-_has_camera = _has_cam_attached()
+    cams = l.enumerate_cameras()
+    if len(cams):
+        _has["camera"] = True
 
-def need_cam(f):
+    # This is somewhat unproper: we open the camera here, even
+    # though we have tests below to ensure that the camera works.
+    # we put this in a catch all Exception though; if opening does not
+    # work, we will only run the most basic tests
+    # try:
+    c = None
+    try:
+        c = Camera(l, cams[0]['guid'])
+
+        print "c.modes: %s" % (c.modes,)
+        if "FORMAT7_0" in c.modes:
+            _has["format7"] = True
+    except:
+        pass
+    finally:
+        if c is not None:
+            c.close()
+
+_check_camera_and_features()
+
+def needs(f, what):
     def skipper(*args, **kwargs):
-        if not _has_camera:
-            raise nose.SkipTest, "This test needs a camera attached!"
+        if not what in _has:
+            raise nose.SkipTest("This test needs the following device "
+                "or feature: %s!" % what)
         else:
             return f(*args, **kwargs)
     return nose.tools.make_decorator(f)(skipper)
+need_cam = lambda f: needs(f, "camera")
+need_format7 = lambda f: needs(f, "format7")
+
 
 class LibBase(object):
     @need_cam
@@ -64,7 +89,7 @@ class CamBase(LibBase):
         mode = self.c.modes[0]
         self.c.mode = mode
         self.c.fps = self.c.get_framerates_for_mode(mode)[-1]
-        
+
     @need_cam
     def tearDown(self):
         self.c.stop()
@@ -111,18 +136,17 @@ class TestCamera(CamBase):
         eq_(i.shape[1], self.c.mode[0])
         self.c.stop()
 
+
+
     @need_cam
     @attr('slow')
     def test_reset(self):
-        print self.c.mode
-        print self.c.framerate.val
         self.c.start()
         self.c.reset_bus()
 
         eq_(self.c.running, False)
-        # Most cameras need a second here.
-        time.sleep(.1)
 
+        self.c.open()
         self.c.start()
         self.c.shot()
         self.c.stop()
@@ -140,6 +164,40 @@ class TestCamera(CamBase):
         except AttributeError:
             pass # Maybe camera does not support this
 
+    @need_format7
+    def test_mode7(self):
+        smallest_mode = self.c.modes[0]
+        self.c.mode = "FORMAT7_0"
+        self.c.program_format7_mode(0, (0,0), smallest_mode)
 
+        self.c.start()
+        i = self.c.shot()
+        self.c.stop()
+
+        assert_equal(i.shape[0], smallest_mode[1])
+        assert_equal(i.shape[1], smallest_mode[0])
+
+class TestModeSetting(CamBase):
+    def _run(self, m):
+        self.c.mode = m
+        self.c.start()
+        i = self.c.shot()
+        self.c.stop()
+
+        eq_(self.c.mode, self._mode)
+        eq_(i.shape[0], self._mode[1])
+        eq_(i.shape[1], self._mode[0])
+
+    @need_cam
+    def test_set_mode_with_tuple(self):
+        self._mode = self.c.modes[0]
+        ok_(isinstance(self._mode,tuple))
+        self._run(self._mode)
+
+    @need_cam
+    def test_set_mode_with_str(self):
+        self._mode = self.c.modes[0]
+        descr = "%ix%i_%s" % self._mode
+        self._run(descr)
 
 

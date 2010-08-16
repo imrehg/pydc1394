@@ -30,9 +30,8 @@ import sys
 
 try:
     _dll = cdll.LoadLibrary(find_library('dc1394'))
-except :
-    print "FATAL: dc1394 not found"
-    raise "RuntimeError"
+except Exception, e:
+    raise RuntimeError("FATAL: dc1394 could not be found or opened: %s" % e)
 #end try
 
 ###########################################################################
@@ -207,15 +206,15 @@ video_mode_details = {
        84: (1600,1200,'Y8'),
        85: (1280,960,'Y16'),
        86: (1600,1200,'Y16'),
-       87: (0, 0, 'EXIF'),
-       88: (0, 0, 'FORMAT7_0'),
-       89: (0, 0, 'FORMAT7_1'),
-       90: (0, 0, 'FORMAT7_2'),
-       91: (0, 0, 'FORMAT7_3'),
-       92: (0, 0, 'FORMAT7_4'),
-       93: (0, 0, 'FORMAT7_5'),
-       94: (0, 0, 'FORMAT7_6'),
-       95: (0, 0, 'FORMAT7_7'),
+       87: 'EXIF',
+       88: 'FORMAT7_0',
+       89: 'FORMAT7_1',
+       90: 'FORMAT7_2',
+       91: 'FORMAT7_3',
+       92: 'FORMAT7_4',
+       93: 'FORMAT7_5',
+       94: 'FORMAT7_6',
+       95: 'FORMAT7_7',
 }
 
 
