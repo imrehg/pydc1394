@@ -50,7 +50,7 @@ def _check_camera_and_features():
         c = Camera(l, cams[0]['guid'])
 
         print "c.modes: %s" % (c.modes,)
-        if "FORMAT7_0" in c.modes:
+        if "FORMAT7_0" in (m.name for m in c.modes):
             _has["format7"] = True
     except:
         pass
@@ -88,7 +88,7 @@ class CamBase(LibBase):
         self.c = Camera(self.l, cams[0]['guid'])
         mode = self.c.modes[0]
         self.c.mode = mode
-        self.c.fps = self.c.get_framerates_for_mode(mode)[-1]
+        self.c.fps = mode.framerates[-1]
 
     @need_cam
     def tearDown(self):
@@ -132,8 +132,7 @@ class TestCamera(CamBase):
     def test_acquisition(self):
         self.c.start()
         i = self.c.shot()
-        eq_(i.shape[0], self.c.mode[1])
-        eq_(i.shape[1], self.c.mode[0])
+        eq_(i.shape, self.c.mode.shape)
         self.c.stop()
 
 
@@ -167,15 +166,19 @@ class TestCamera(CamBase):
     @need_format7
     def test_mode7(self):
         smallest_mode = self.c.modes[0]
-        self.c.mode = "FORMAT7_0"
-        self.c.program_format7_mode(0, (0,0), smallest_mode)
+        m, = filter(lambda k: k.name == "FORMAT7_0", self.c.modes)
+
+        m.setup((smallest_mode.shape[1], smallest_mode.shape[0]), (0,0),
+            color_coding = "Y8")
+
+        self.c.mode = m
 
         self.c.start()
         i = self.c.shot()
         self.c.stop()
 
-        assert_equal(i.shape[0], smallest_mode[1])
-        assert_equal(i.shape[1], smallest_mode[0])
+        assert_equal(i.shape, m.shape)
+        assert_equal(i.dtype, m.dtype)
 
 class TestModeSetting(CamBase):
     def _run(self, m):
@@ -185,19 +188,19 @@ class TestModeSetting(CamBase):
         self.c.stop()
 
         eq_(self.c.mode, self._mode)
-        eq_(i.shape[0], self._mode[1])
-        eq_(i.shape[1], self._mode[0])
+        eq_(i.shape, self._mode.shape)
+        eq_(i.dtype, self._mode.dtype)
 
     @need_cam
     def test_set_mode_with_tuple(self):
         self._mode = self.c.modes[0]
-        ok_(isinstance(self._mode,tuple))
         self._run(self._mode)
 
     @need_cam
     def test_set_mode_with_str(self):
         self._mode = self.c.modes[0]
-        descr = "%ix%i_%s" % self._mode
+        descr = str(self._mode)
+        print "descr: %s" % (descr)
         self._run(descr)
 
 

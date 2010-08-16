@@ -173,7 +173,7 @@ video_mode_vals = {
 }
 video_mode_codes = invert_dict( video_mode_vals )
 
-video_mode_t = c_int
+video_mode_t = c_int32
 VIDEO_MODE_MIN = min(video_mode_vals.keys())
 VIDEO_MODE_MAX = max(video_mode_vals.keys())
 VIDEO_MODE_NUM = (VIDEO_MODE_MAX - VIDEO_MODE_MIN + 1)
@@ -1499,7 +1499,7 @@ _dll.dc1394_format7_set_roi.errcheck = _errcheck
 
 
 _dll.dc1394_format7_get_roi.restype = error_t
-_dll.dc1394_format7_get_roi.argtypes = [ POINTER(camera_t), video_mode_t, color_coding_t,\
+_dll.dc1394_format7_get_roi.argtypes = [ POINTER(camera_t), video_mode_t, POINTER(color_coding_t),\
                                         POINTER(c_int32), POINTER(c_int32), POINTER(c_int32),\
                                         POINTER(c_int32), POINTER(c_int32) ]
 _dll.dc1394_format7_get_roi.errcheck = _errcheck
