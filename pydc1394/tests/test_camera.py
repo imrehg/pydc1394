@@ -143,14 +143,6 @@ class TestCamera(CamBase):
         self.c.start()
         self.c.reset_bus()
 
-        eq_(self.c.running, False)
-
-        self.c.open()
-        self.c.start()
-        self.c.shot()
-        self.c.stop()
-
-
     @need_cam
     def test_manual_shutter_time_setting(self):
         try:

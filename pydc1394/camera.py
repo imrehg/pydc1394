@@ -680,15 +680,18 @@ class Camera(object):
         this means that all cameras have to reenumerate and will drop frames.
         So only use this if you know what you are doing.
 
-        Note that the camera is closed after this; so if you want to use
-        it again, you have to call :method:`open` again.
+        Note that the camera the camera is closed after this and it is not
+        guaranteed that you can reopen it with :method:`open` again. To be sure,
+        you have to recreate a new Camera object.
         """
         if self.running:
             self.stop()
 
         self._dll.dc1394_reset_bus( self._cam )
-
         self.close()
+
+        # This is needed so the generation is updated on Linux
+        self._lib.enumerate_cameras()
 
     def shot( self ):
         """
