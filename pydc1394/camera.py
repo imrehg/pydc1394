@@ -57,7 +57,6 @@ class DC1394Library(object):
         # we cache the dll, so it gets not deleted before we cleanup
         self._dll = _dll
         self._h = _dll.dc1394_new()
-        self.cameralist = self.enumerate_cameras()
 
     def __del__(self):
         self.close()
@@ -79,7 +78,6 @@ class DC1394Library(object):
         if self._h is not None:
             self._dll.dc1394_free( self._h )
         self._h = None
-        self.cameralist = []
 
     def enumerate_cameras( self ):
         """
