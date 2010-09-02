@@ -647,7 +647,7 @@ class Camera(object):
         self._queue = None if interactive else Queue(1000)
 
         # Now, start the Worker thread
-        self._worker = _CamAcquisitonThread( self, self.new_image )
+        self._worker = _CamAcquisitonThread( self, self._new_image )
 
         self._running_lock.acquire()
         self._running = True
